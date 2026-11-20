@@ -153,11 +153,12 @@ class DetailFields extends StatelessWidget {
 
 Future<bool> runAction(
   BuildContext context,
-  Future<Object?> Function() action,
-) async {
+  Future<Object?> Function() action, {
+  bool Function()? showSuccess,
+}) async {
   try {
     await action();
-    if (context.mounted) {
+    if (context.mounted && (showSuccess?.call() ?? true)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
