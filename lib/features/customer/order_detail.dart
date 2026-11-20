@@ -13,6 +13,7 @@ import 'order_actions.dart';
 import 'order_confirmation.dart';
 import 'checklist_editor.dart';
 import '../manager/pricing_page.dart';
+import '../manager/readiness_page.dart';
 import '../manager/delivery_page.dart';
 import 'contract_page.dart';
 import 'results_page.dart';
@@ -121,6 +122,13 @@ class OrderDetailPage extends ConsumerWidget {
                   ),
                 ),
               if (manager) ...[
+                OutlinedButton.icon(
+                  onPressed: () => open(OrderReadinessPage(orderId: id)),
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: Text(
+                    context.tr('Order readiness', 'Điều kiện duyệt đơn'),
+                  ),
+                ),
                 OutlinedButton(
                   onPressed: () => open(PricingPage(orderId: id)),
                   child: Text(context.tr('Review pricing', 'Duyệt giá')),
