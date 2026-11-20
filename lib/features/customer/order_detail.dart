@@ -7,6 +7,8 @@ import '../../shared/editor.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import 'finance_page.dart';
+import '../manager/pricing_page.dart';
+import '../manager/delivery_page.dart';
 import 'contract_page.dart';
 import 'results_page.dart';
 
@@ -79,6 +81,21 @@ class OrderDetailPage extends ConsumerWidget {
                   context.tr('Contract documents', 'Tài liệu hợp đồng'),
                 ),
               ),
+              if (manager) ...[
+                OutlinedButton(
+                  onPressed: () => open(PricingPage(orderId: id)),
+                  child: Text(context.tr('Review pricing', 'Duyệt giá')),
+                ),
+                OutlinedButton(
+                  onPressed: () => open(ManagerDeliveryPage(orderId: id)),
+                  child: Text(
+                    context.tr(
+                      'Publish and revise results',
+                      'Bàn giao và chỉnh sửa kết quả',
+                    ),
+                  ),
+                ),
+              ],
               if (!manager) ...[
                 OutlinedButton(
                   onPressed: () => open(CustomerMissionsPage(orderId: id)),
