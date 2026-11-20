@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/config.dart';
+import '../core/settings.dart';
+export '../core/settings.dart';
+import '../shared/portal_scaffold.dart';
 import '../core/models.dart';
 import '../core/mobile_policy.dart';
 import '../features/auth/auth_page.dart';
@@ -11,16 +14,6 @@ import '../features/profile/profile_page.dart';
 import '../shared/strings.dart';
 import 'routes.dart';
 import 'theme.dart';
-
-final localeProvider = NotifierProvider<LocaleController, Locale>(
-  LocaleController.new,
-);
-
-class LocaleController extends Notifier<Locale> {
-  @override
-  Locale build() => const Locale('vi');
-  void toggle() => state = Locale(state.languageCode == 'vi' ? 'en' : 'vi');
-}
 
 class OdmsApp extends ConsumerStatefulWidget {
   const OdmsApp({super.key});
@@ -42,7 +35,11 @@ class _OdmsAppState extends ConsumerState<OdmsApp> {
         return state.uri.path == '/auth' ? null : '/auth';
       }
       if (state.uri.path == '/auth' || state.uri.path == '/loading') {
-        return '/home';
+        return switch (session.user!.role) {
+          AppRole.customer => '/customer/orders',
+          AppRole.manager => '/manager/dashboard',
+          AppRole.staff => '/staff/missions',
+        };
       }
       if (!mayOpenMobilePath(session.user!.role, state.uri.path)) {
         return '/home';
@@ -131,6 +128,8 @@ class _OdmsAppState extends ConsumerState<OdmsApp> {
       title: 'ODMS Mobile',
       debugShowCheckedModeBanner: false,
       theme: odmsTheme(),
+      darkTheme: odmsTheme(brightness: Brightness.dark),
+      themeMode: ref.watch(themeModeProvider),
       locale: ref.watch(localeProvider),
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('vi'), Locale('en')],
@@ -185,7 +184,7 @@ class HomePage extends ConsumerWidget {
     entries.sort(
       (a, b) => order.indexOf(a.path).compareTo(order.indexOf(b.path)),
     );
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: const Text('ODMS'),
         actions: [

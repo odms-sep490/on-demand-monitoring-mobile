@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../core/models.dart';
 import 'strings.dart';
+import 'mobile_ui.dart';
 
 class RemoteView extends StatefulWidget {
   const RemoteView({super.key, required this.load, required this.builder});
@@ -101,29 +102,11 @@ class _RecordListState extends State<RecordList> {
                   );
                 }
                 final item = items[index];
-                return Card(
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    title: Text(recordTitle(item)),
-                    subtitle: Text(
-                      [
-                        recordStatus(item),
-                        item['address'],
-                        item['scheduledStartAt'] ??
-                            item['createdAt'] ??
-                            item['openedAt'],
-                      ].where((e) => e != null && '$e'.isNotEmpty).join(' · '),
-                    ),
-                    trailing: widget.onTap == null
-                        ? null
-                        : const Icon(Icons.chevron_right),
-                    onTap: widget.onTap == null
-                        ? null
-                        : () => widget.onTap!(item),
-                  ),
+                return DomainCard(
+                  item: item,
+                  onTap: widget.onTap == null
+                      ? null
+                      : () => widget.onTap!(item),
                 );
               },
             ),
