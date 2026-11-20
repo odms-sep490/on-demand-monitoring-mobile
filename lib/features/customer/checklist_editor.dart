@@ -30,8 +30,13 @@ Json checklistUpdateItem(Json row) {
 }
 
 class CustomerChecklistEditor extends ConsumerStatefulWidget {
-  const CustomerChecklistEditor({super.key, required this.order});
+  const CustomerChecklistEditor({
+    super.key,
+    required this.order,
+    this.returnSelection = false,
+  });
   final Json order;
+  final bool returnSelection;
   @override
   ConsumerState<CustomerChecklistEditor> createState() =>
       _CustomerChecklistEditorState();
@@ -172,6 +177,13 @@ class _CustomerChecklistEditorState
           onPressed: saving || rows.isEmpty
               ? null
               : () async {
+                  if (widget.returnSelection) {
+                    Navigator.pop(
+                      context,
+                      rows.map(checklistUpdateItem).toList(),
+                    );
+                    return;
+                  }
                   setState(() => saving = true);
                   final saved = await runAction(
                     context,

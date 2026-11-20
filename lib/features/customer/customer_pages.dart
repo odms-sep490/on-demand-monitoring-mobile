@@ -9,6 +9,9 @@ import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import 'order_detail.dart';
 import 'order_compliance.dart';
+import 'checklist_editor.dart';
+import 'order_confirmation.dart';
+import 'order_draft.dart';
 
 export 'orders_page.dart';
 
@@ -82,6 +85,31 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
         'Khung giờ',
         kind: FieldKind.choice,
         loadOptions: () => lookup(api, '/api/preferred-times'),
+      ),
+      const FieldSpec(
+        'flightPurpose',
+        'Monitoring purpose',
+        'Mục đích giám sát',
+        kind: FieldKind.choice,
+        options: {
+          'SURVEY_MONITORING': 'Survey / Khảo sát',
+          'AGRICULTURE': 'Agriculture / Nông nghiệp',
+          'CONSTRUCTION_MONITORING': 'Construction / Công trình',
+          'INDUSTRIAL_INSPECTION':
+              'Industrial inspection / Kiểm tra công nghiệp',
+          'AREA_MONITORING': 'Area monitoring / Giám sát khu vực',
+          'FOREST_MONITORING': 'Forest monitoring / Giám sát rừng',
+          'OTHER': 'Other / Khác',
+        },
+      ),
+      const FieldSpec(
+        'estimatedLengthM',
+        'Linear site length (m)',
+        'Chiều dài mục tiêu tuyến (m)',
+        kind: FieldKind.number,
+        min: 0.001,
+        max: 100000,
+        required: false,
       ),
       const FieldSpec(
         'siteContactName',
@@ -232,19 +260,57 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
   if (area == null || !context.mounted) return false;
   final compliance = await collectOrderCompliance(context);
   if (compliance == null || !context.mounted) return false;
-  final body = {
-    ...compliance,
-    ...service,
-    ...details,
-    ...area,
-    'dataRetentionDays': int.parse('${details['dataRetentionDays']}'),
-    'deliverables': (details['deliverableIds'] as List)
-        .map(
-          (id) => {'deliverableTypeId': id, 'requirement': <String, dynamic>{}},
-        )
-        .toList(),
-  }..remove('deliverableIds');
-  if (body['recurrenceType'] == 'NONE') body.remove('recurrenceOccurrences');
+  final templates = records(
+    await api.request(
+      '/api/services/${segment('${service['serviceId']}')}/checklists',
+    ),
+  );
+  if (!context.mounted) return false;
+  final selected = await Navigator.push<List<Json>>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CustomerChecklistEditor(
+        returnSelection: true,
+        order: {
+          'serviceId': service['serviceId'],
+          'checklistItems': templates
+              .where(
+                (e) =>
+                    e['serviceActive'] != false &&
+                    e['checklistActive'] != false,
+              )
+              .map(
+                (e) => {
+                  'sourceChecklistId': e['checklistId'],
+                  'sourceChecklistVersion': e['checklistVersion'],
+                  'content': e['content'],
+                  'required': e['required'] ?? false,
+                  'minimumEvidenceCount': e['minimumEvidenceCount'],
+                  'requiredEvidenceType': e['requiredEvidenceType'],
+                  'requestedImageCount': e['includedImageCount'] ?? 0,
+                  'requestedVideoCount': e['includedVideoCount'] ?? 0,
+                },
+              )
+              .toList(),
+        },
+      ),
+    ),
+  );
+  if (selected == null || !context.mounted) return false;
+  final body = OrderDraft(
+    service: service,
+    details: details,
+    area: area,
+    compliance: compliance,
+    checklist: selected,
+  ).toRequestJson();
+  final confirmed = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => SiteAdvisoryPage(order: body, area: area, confirm: true),
+    ),
+  );
+  if (confirmed != true || !context.mounted) return false;
   return runAction(
     context,
     () => api.request('/api/orders', method: 'POST', body: body),

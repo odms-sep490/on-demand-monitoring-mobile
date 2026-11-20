@@ -18,6 +18,7 @@ class CustomerOrdersPage extends ConsumerStatefulWidget {
 
 class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
   String query = '', status = '';
+  bool creating = false;
   @override
   Widget build(BuildContext context) {
     final api = ref.watch(apiProvider);
@@ -50,9 +51,16 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
                   action: FilledButton.icon(
                     icon: const Icon(Icons.add, size: 18),
                     label: Text(context.tr('New request', 'Tạo yêu cầu')),
-                    onPressed: () async {
-                      if (await createOrder(context, api)) reload();
-                    },
+                    onPressed: creating
+                        ? null
+                        : () async {
+                            setState(() => creating = true);
+                            try {
+                              if (await createOrder(context, api)) reload();
+                            } finally {
+                              if (mounted) setState(() => creating = false);
+                            }
+                          },
                   ),
                 ),
                 StatGrid(
