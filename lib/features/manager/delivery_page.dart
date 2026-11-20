@@ -40,6 +40,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
       body: RemoteView(
         load: () async => {
           'delivery': await api.request('$path/delivery/checklists'),
+          'release': await optionalResource(api, '$path/delivery'),
           'draft': await optionalResource(api, '$path/delivery/draft'),
           'case': await optionalResource(api, '$path/result-revision-case'),
         },
@@ -447,6 +448,55 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                   context.tr('Publish to customer', 'Bàn giao cho khách hàng'),
                 ),
               ),
+              if ([
+                'READY_FOR_DELIVERY',
+                'PAYMENT_CONFIRMED',
+              ].contains(object(object(value)['release'])['deliveryStatus']))
+                FilledButton.icon(
+                  icon: const Icon(Icons.download_done),
+                  label: Text(
+                    context.tr('Release originals', 'Bàn giao tệp gốc'),
+                  ),
+                  onPressed: publishing
+                      ? null
+                      : () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (dialog) => AlertDialog(
+                              title: Text(
+                                context.tr(
+                                  'Release original files to the customer?',
+                                  'Bàn giao tệp gốc cho khách hàng?',
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(dialog, false),
+                                  child: Text(context.tr('Back', 'Quay lại')),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(dialog, true),
+                                  child: Text(
+                                    context.tr('Release', 'Bàn giao'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true || !context.mounted) return;
+                          setState(() => publishing = true);
+                          final released = await runAction(
+                            context,
+                            () => api.request(
+                              '$path/delivery/release-originals',
+                              method: 'POST',
+                            ),
+                          );
+                          if (!mounted) return;
+                          setState(() => publishing = false);
+                          if (released) reload();
+                        },
+                ),
               if (revision['active'] == true) ...[
                 OutlinedButton(
                   onPressed: () async {
