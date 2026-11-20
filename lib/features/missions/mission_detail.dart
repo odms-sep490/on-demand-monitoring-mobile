@@ -176,7 +176,10 @@ class MissionDetailPage extends ConsumerWidget {
                     subtitle: Text(
                       '${assignment['deviceRole']} · ${assignment['status']}',
                     ),
-                    onTap: canReplace
+                    onTap:
+                        canReplace &&
+                            assignment['replacementRequestedAt'] != null &&
+                            assignment['replacementCompleted'] != true
                         ? () => replace(assignment, device: true)
                         : null,
                     trailing: planning
