@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/config.dart';
 import '../core/models.dart';
+import '../core/mobile_policy.dart';
 import '../features/auth/auth_page.dart';
 import '../features/auth/session.dart';
 import '../features/profile/profile_page.dart';
@@ -41,6 +42,9 @@ class _OdmsAppState extends ConsumerState<OdmsApp> {
         return state.uri.path == '/auth' ? null : '/auth';
       }
       if (state.uri.path == '/auth' || state.uri.path == '/loading') {
+        return '/home';
+      }
+      if (!mayOpenMobilePath(session.user!.role, state.uri.path)) {
         return '/home';
       }
       final role = session.user!.role.name;

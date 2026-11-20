@@ -169,6 +169,10 @@ class ApiClient {
           cancelToken: cancelToken,
         );
       }
+      if (error.response?.statusCode == 401 && authenticated && !retry) {
+        await clearSession();
+        onExpired?.call();
+      }
       final payload = object(error.response?.data);
       throw ApiFailure(
         '${payload['message'] ?? (error.response == null ? 'Cannot connect to ODMS. Check your connection and retry.' : 'Request failed (${error.response?.statusCode})')}',

@@ -11,9 +11,41 @@ import '../features/missions/mission_detail.dart';
 import '../features/devices/device_pages.dart';
 import '../features/customer/order_detail.dart';
 import '../features/maintenance/maintenance_page.dart';
+import '../features/staff/availability_page.dart';
+import '../features/staff/checklist_page.dart';
+import '../features/staff/evidence_page.dart';
+import '../features/staff/licenses_page.dart';
 import 'app.dart';
 
 List<RouteBase> featureRoutes() => [
+  GoRoute(path: '/staff/licenses', builder: (_, _) => const LicensesPage()),
+  GoRoute(
+    path: '/staff/missions',
+    builder: (_, _) => const MissionsPage(staff: true),
+  ),
+  GoRoute(
+    path: '/staff/missions/:id',
+    builder: (_, state) => MissionDetailPage(id: state.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: '/staff/missions/:id/checklist',
+    builder: (_, state) =>
+        ChecklistPage(missionId: state.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: '/staff/missions/:id/media',
+    builder: (_, state) => EvidencePage(missionId: state.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: '/staff/availability',
+    builder: (_, _) => const AvailabilityPage(),
+  ),
+  GoRoute(path: '/staff/devices', builder: (_, _) => const DevicesPage()),
+  GoRoute(
+    path: '/staff/maintenance',
+    builder: (_, _) => const MaintenancePage(),
+  ),
+
   GoRoute(
     path: '/manager/maintenance',
     builder: (_, _) => const MaintenancePage(),
@@ -58,6 +90,42 @@ List<RouteBase> featureRoutes() => [
   ),
 ];
 List<MenuEntry> menuEntries() => [
+  const MenuEntry(
+    '/staff/licenses',
+    'My qualifications',
+    'Chứng chỉ của tôi',
+    Icons.badge_outlined,
+    {AppRole.staff},
+  ),
+  const MenuEntry(
+    '/staff/missions',
+    'Assigned missions',
+    'Nhiệm vụ được giao',
+    Icons.assignment_ind_outlined,
+    {AppRole.staff},
+  ),
+  const MenuEntry(
+    '/staff/availability',
+    'Availability',
+    'Lịch bận',
+    Icons.calendar_month_outlined,
+    {AppRole.staff},
+  ),
+  const MenuEntry(
+    '/staff/devices',
+    'Device records',
+    'Thông tin thiết bị',
+    Icons.precision_manufacturing_outlined,
+    {AppRole.staff},
+  ),
+  const MenuEntry(
+    '/staff/maintenance',
+    'Maintenance',
+    'Bảo trì',
+    Icons.build_outlined,
+    {AppRole.staff},
+  ),
+
   const MenuEntry(
     '/manager/maintenance',
     'Maintenance',
