@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
@@ -121,7 +123,7 @@ class _EvidencePageState extends ConsumerState<EvidencePage> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !uploading,
-    child: Scaffold(
+    child: PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Mission evidence', 'Minh chứng nhiệm vụ')),
       ),

@@ -1,10 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../core/models.dart';
-import '../../core/providers.dart';
 import '../../shared/area_picker.dart';
 import '../../shared/editor.dart';
 import '../../shared/strings.dart';
@@ -12,36 +10,7 @@ import '../../shared/widgets.dart';
 import 'order_detail.dart';
 import 'order_compliance.dart';
 
-class CustomerOrdersPage extends ConsumerWidget {
-  const CustomerOrdersPage({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final api = ref.watch(apiProvider);
-    return Scaffold(
-      appBar: AppBar(title: Text(context.tr('My orders', 'Đơn hàng của tôi'))),
-      body: RemoteView(
-        load: () => api.request('/api/orders/mine'),
-        builder: (context, value, reload) => RecordList(
-          items: records(value),
-          refresh: reload,
-          onTap: (item) async {
-            await context.push('/customer/orders/${segment('${item['id']}')}');
-            reload();
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: Text(context.tr('New request', 'Yêu cầu mới')),
-        onPressed: () async {
-          if (await createOrder(context, api) && context.mounted) {
-            context.go('/home');
-          }
-        },
-      ),
-    );
-  }
-}
+export 'orders_page.dart';
 
 Future<Map<String, String>> lookup(
   ApiClient api,

@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,7 +19,7 @@ class MissionReviewPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider),
         path = '/api/manager/missions/${segment(missionId)}/media-approvals';
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(
           context.tr(

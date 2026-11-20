@@ -58,5 +58,6 @@ String recordTitle(Json json) {
 }
 
 String recordStatus(Json json) =>
-    '${json['orderStatus'] ?? json['status'] ?? json['type'] ?? ''}';
+    '${json['missionCode'] != null ? json['status'] ?? '' : json['orderStatus'] ?? json['status'] ?? json['type'] ?? ''}';
+
 String segment(String id) => Uri.encodeComponent(id);

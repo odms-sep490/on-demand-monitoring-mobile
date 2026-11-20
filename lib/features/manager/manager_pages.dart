@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,97 +12,12 @@ import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import '../customer/customer_pages.dart' show lookup;
 
-class ManagerDashboardPage extends ConsumerWidget {
-  const ManagerDashboardPage({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
-    appBar: AppBar(
-      title: Text(context.tr('Operational dashboard', 'Tổng quan vận hành')),
-    ),
-    body: RemoteView(
-      load: () => ref
-          .read(apiProvider)
-          .request('/api/manager/dashboard', query: {'range': '30D'}),
-      builder: (context, value, reload) {
-        final data = object(value), summary = object(data['summary']);
-        return RefreshIndicator(
-          onRefresh: () async => reload(),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              DetailFields(
-                data: summary,
-                fields: const {
-                  'totalOrders': ('Orders', 'Đơn hàng'),
-                  'totalQuoteValue': (
-                    'Quoted value (VND)',
-                    'Giá trị báo giá (VND)',
-                  ),
-                  'pendingOrderCount': ('Pending orders', 'Đơn chờ duyệt'),
-                  'waitingDepositCount': (
-                    'Awaiting deposit',
-                    'Chờ thanh toán cọc',
-                  ),
-                  'activeMissionCount': (
-                    'Active missions',
-                    'Nhiệm vụ đang thực hiện',
-                  ),
-                  'attentionRequiredCount': ('Needs attention', 'Cần xử lý'),
-                },
-              ),
-              Text(
-                context.tr('Action items', 'Công việc cần xử lý'),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              for (final item in records(data['actionItems']))
-                Card(
-                  child: ListTile(
-                    title: Text('${item['title']}'),
-                    subtitle: Text('${item['description'] ?? ''}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      if (item['orderId'] != null) {
-                        context.push(
-                          '/manager/orders/${segment('${item['orderId']}')}',
-                        );
-                      } else if (item['missionId'] != null) {
-                        context.push(
-                          '/manager/missions/${segment('${item['missionId']}')}',
-                        );
-                      }
-                    },
-                  ),
-                ),
-              const SizedBox(height: 24),
-              Text(
-                context.tr('Recent orders', 'Đơn hàng gần đây'),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              for (final item in records(data['recentOrders']))
-                Card(
-                  child: ListTile(
-                    title: Text('${item['orderCode']}'),
-                    subtitle: Text(
-                      '${item['customerName']} · ${item['status']}',
-                    ),
-                    onTap: () => context.push(
-                      '/manager/orders/${segment('${item['orderId']}')}',
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    ),
-  );
-}
+export 'dashboard_page.dart';
 
 class ManagerOrdersPage extends ConsumerWidget {
   const ManagerOrdersPage({super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) => PortalScaffold(
     appBar: AppBar(
       title: Text(context.tr('Order queue', 'Danh sách đơn hàng')),
     ),
@@ -124,7 +41,7 @@ class MissionsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider);
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(
           schedule
@@ -254,7 +171,7 @@ class ExecutionPlanPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider),
         path = '/api/orders/${segment(orderId)}/execution-plan';
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Execution plan', 'Kế hoạch thực hiện')),
       ),

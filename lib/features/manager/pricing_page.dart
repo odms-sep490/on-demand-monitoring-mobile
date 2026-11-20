@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,7 +16,7 @@ class PricingPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider),
         path = '/api/manager/orders/${segment(orderId)}';
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(title: Text(context.tr('Pricing review', 'Duyệt giá'))),
       body: RemoteView(
         load: () => api.request('$path/pricing'),

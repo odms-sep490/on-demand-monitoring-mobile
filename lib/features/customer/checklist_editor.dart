@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -128,7 +130,7 @@ class _CustomerChecklistEditorState
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => PortalScaffold(
     appBar: AppBar(
       title: Text(context.tr('Edit checklist', 'Chỉnh sửa hạng mục')),
     ),
