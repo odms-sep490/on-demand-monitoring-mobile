@@ -75,84 +75,37 @@ class ResultsPage extends ConsumerWidget {
                                     icon: const Icon(Icons.open_in_new),
                                   ),
                           ),
-                        if (review['canSubmitRevision'] == true &&
-                            item['canRequestRevision'] != false)
-                          OutlinedButton(
-                            onPressed: () async {
-                              final body = await editRecord(
-                                context,
-                                title: context.tr(
-                                  'Request revision',
-                                  'Yêu cầu chỉnh sửa',
-                                ),
-                                fields: const [
-                                  FieldSpec(
-                                    'reasonCode',
-                                    'Reason',
-                                    'Lý do',
-                                    kind: FieldKind.choice,
-                                    options: {
-                                      'MISSING_EVIDENCE':
-                                          'Missing evidence / Thiếu minh chứng',
-                                      'POOR_QUALITY':
-                                          'Poor quality / Chất lượng kém',
-                                      'WRONG_LOCATION':
-                                          'Wrong location / Sai vị trí',
-                                      'REQUIREMENT_NOT_MET':
-                                          'Requirement not met / Chưa đáp ứng',
-                                      'OTHER': 'Other / Khác',
-                                    },
-                                  ),
-                                  FieldSpec(
-                                    'note',
-                                    'Details',
-                                    'Chi tiết',
-                                    kind: FieldKind.multiline,
-                                  ),
-                                ],
-                              );
-                              if (body != null &&
-                                  context.mounted &&
-                                  await runAction(
-                                    context,
-                                    () => api.request(
-                                      '$path/result/revision-request',
-                                      method: 'POST',
-                                      body: {
-                                        'reviewRoundId':
-                                            review['reviewRoundId'],
-                                        'expectedRoundVersion':
-                                            review['roundVersion'],
-                                        'clientRequestId': newRequestId(),
-                                        'generalNote': body['note'],
-                                        'items': [
-                                          {
-                                            'roundItemId': item['roundItemId'],
-                                            ...body,
-                                            'roundEvidenceIds':
-                                                records(item['evidence'])
-                                                    .map(
-                                                      (e) =>
-                                                          e['roundEvidenceId'],
-                                                    )
-                                                    .toList(),
-                                          },
-                                        ],
-                                      },
-                                    ),
-                                  )) {
-                                reload();
-                              }
-                            },
-                            child: Text(
-                              context.tr(
-                                'Request revision',
-                                'Yêu cầu chỉnh sửa',
-                              ),
-                            ),
-                          ),
                       ],
                     ),
+                  ),
+                ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => ResultHistoryPage(orderId: orderId),
+                  ),
+                ),
+                child: Text(context.tr('Result history', 'Lịch sử bàn giao')),
+              ),
+              if (review['canSubmitRevision'] == true &&
+                  items.any((item) => item['canRequestRevision'] != false))
+                OutlinedButton(
+                  onPressed: () async {
+                    final body = await collectRevision(context, review, items);
+                    if (body != null &&
+                        context.mounted &&
+                        await runAction(
+                          context,
+                          () => api.command(
+                            '$path/result/revision-request',
+                            body: body,
+                          ),
+                        )) {
+                      reload();
+                    }
+                  },
+                  child: Text(
+                    context.tr('Request revision', 'Yêu cầu chỉnh sửa'),
                   ),
                 ),
               if (review['canAcceptResult'] == true)
@@ -198,6 +151,216 @@ class ResultsPage extends ConsumerWidget {
                   child: Text(
                     context.tr('Accept results', 'Chấp nhận kết quả'),
                   ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+Future<Json?> collectRevision(
+  BuildContext context,
+  Json review,
+  List<Json> items,
+) async {
+  final eligible = {
+    for (final item in items)
+      if (item['canRequestRevision'] != false && item['roundItemId'] is String)
+        item['roundItemId'] as String: item,
+  };
+  final selection = await editRecord(
+    context,
+    title: context.tr('Request revision', 'Yêu cầu chỉnh sửa'),
+    fields: [
+      FieldSpec(
+        'items',
+        'Checklist items to revise',
+        'Hạng mục cần chỉnh sửa',
+        kind: FieldKind.multiChoice,
+        options: eligible.map((id, item) => MapEntry(id, '${item['title']}')),
+      ),
+      const FieldSpec(
+        'generalNote',
+        'General note',
+        'Ghi chú chung',
+        kind: FieldKind.multiline,
+        required: false,
+      ),
+    ],
+    validate: (values) => validateRevisionNotes(context, values),
+  );
+  if (selection == null || !context.mounted) return null;
+  final selected = (selection['items'] as List).cast<String>();
+  final details = await editRecord(
+    context,
+    title: context.tr('Revision details', 'Chi tiết chỉnh sửa'),
+    fields: [
+      for (final id in selected) ...[
+        FieldSpec(
+          'reason:$id',
+          '${eligible[id]!['title']} — reason',
+          '${eligible[id]!['title']} — lý do',
+          kind: FieldKind.choice,
+          options: const {
+            'MISSING_EVIDENCE': 'Missing evidence / Thiếu minh chứng',
+            'POOR_QUALITY': 'Poor quality / Chất lượng kém',
+            'WRONG_LOCATION': 'Wrong location / Sai vị trí',
+            'REQUIREMENT_NOT_MET': 'Requirement not met / Chưa đáp ứng',
+            'OTHER': 'Other / Khác',
+          },
+        ),
+        FieldSpec(
+          'note:$id',
+          'Details',
+          'Chi tiết',
+          kind: FieldKind.multiline,
+          required: false,
+        ),
+        if (records(eligible[id]!['evidence'])
+            .any((e) => e['roundEvidenceId'] is String))
+          FieldSpec(
+            'evidence:$id',
+            'Related evidence',
+            'Minh chứng liên quan',
+            kind: FieldKind.multiChoice,
+            required: false,
+            options: {
+              for (final e in records(eligible[id]!['evidence']))
+                if (e['roundEvidenceId'] is String)
+                  e['roundEvidenceId'] as String: '${e['fileName']}',
+            },
+          ),
+      ],
+    ],
+    validate: (values) => validateRevisionNotes(context, values),
+  );
+  if (details == null) return null;
+  return {
+    'reviewRoundId': review['reviewRoundId'],
+    'expectedRoundVersion': review['roundVersion'],
+    'generalNote': selection['generalNote'] ?? '',
+    'items': [
+      for (final id in selected)
+        {
+          'roundItemId': id,
+          'reasonCode': details['reason:$id'],
+          'note': details['note:$id'] ?? '',
+          'roundEvidenceIds': details['evidence:$id'] ?? <String>[],
+        },
+    ],
+  };
+}
+
+String? validateRevisionNotes(BuildContext context, Json values) =>
+    values.entries.any(
+      (e) =>
+          (e.key == 'generalNote' || e.key.startsWith('note:')) &&
+          e.value is String &&
+          (e.value as String).length > 2000,
+    )
+    ? context.tr(
+        'Notes must be at most 2,000 characters.',
+        'Ghi chú tối đa 2.000 ký tự.',
+      )
+    : null;
+
+class ResultHistoryPage extends ConsumerStatefulWidget {
+  const ResultHistoryPage({super.key, required this.orderId});
+  final String orderId;
+
+  @override
+  ConsumerState<ResultHistoryPage> createState() => _ResultHistoryPageState();
+}
+
+class _ResultHistoryPageState extends ConsumerState<ResultHistoryPage> {
+  static const pageSize = 20;
+  int page = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = ref.watch(apiProvider);
+    return PortalScaffold(
+      appBar: AppBar(
+        title: Text(context.tr('Result history', 'Lịch sử bàn giao')),
+      ),
+      body: RemoteView(
+        key: ValueKey(page),
+        load: () => api.request(
+          '/api/orders/${segment(widget.orderId)}/result-review/history',
+          query: {'page': page, 'size': pageSize},
+        ),
+        builder: (context, data, reload) {
+          final history = object(data);
+          final rounds = records(history['rounds']);
+          final total = history['totalItems'] as num? ?? rounds.length;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (rounds.isEmpty)
+                Text(
+                  context.tr(
+                    'No delivery rounds yet.',
+                    'Chưa có vòng bàn giao.',
+                  ),
+                ),
+              for (final round in rounds)
+                Card(
+                  child: ExpansionTile(
+                    title: Text(
+                      context.tr(
+                        'Round ${round['roundNumber']}',
+                        'Vòng ${round['roundNumber']}',
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${round['status']} · ${round['publishedAt']}',
+                    ),
+                    children: [
+                      for (final item in records(round['items']))
+                        ExpansionTile(
+                          title: Text('${item['title']}'),
+                          children: [
+                            for (final evidence in records(item['evidence']))
+                              ListTile(
+                                title: Text('${evidence['fileName']}'),
+                                subtitle: Text(
+                                  '${evidence['accessReason'] ?? evidence['type']}',
+                                ),
+                                trailing: evidence['url'] == null
+                                    ? null
+                                    : const Icon(Icons.open_in_new),
+                                onTap: evidence['url'] == null
+                                    ? null
+                                    : () => runAction(
+                                        context,
+                                        () => openExternal(evidence['url']),
+                                      ),
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              if (page > 0 || (page + 1) * pageSize < total)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: page == 0
+                          ? null
+                          : () => setState(() => page--),
+                      child: Text(context.tr('Previous', 'Trang trước')),
+                    ),
+                    Text('${page + 1}'),
+                    TextButton(
+                      onPressed: (page + 1) * pageSize >= total
+                          ? null
+                          : () => setState(() => page++),
+                      child: Text(context.tr('Next', 'Trang sau')),
+                    ),
+                  ],
                 ),
             ],
           );
