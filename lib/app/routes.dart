@@ -4,9 +4,13 @@ import 'package:go_router/go_router.dart';
 import '../core/models.dart';
 import '../features/customer/customer_pages.dart';
 import '../features/customer/media_page.dart';
+import '../features/support/support_pages.dart';
+import '../features/notifications/notifications_page.dart';
 import 'app.dart';
 
 List<RouteBase> featureRoutes() => [
+  GoRoute(path: '/support', builder: (_, _) => const SupportPage()),
+  GoRoute(path: '/notifications', builder: (_, _) => const NotificationsPage()),
   GoRoute(
     path: '/customer/orders',
     builder: (_, _) => const CustomerOrdersPage(),
@@ -21,6 +25,18 @@ List<RouteBase> featureRoutes() => [
   ),
 ];
 List<MenuEntry> menuEntries() => [
+  const MenuEntry('/support', 'Support', 'Hỗ trợ', Icons.support_agent, {
+    AppRole.customer,
+    AppRole.manager,
+    AppRole.staff,
+  }),
+  const MenuEntry(
+    '/notifications',
+    'Notifications',
+    'Thông báo',
+    Icons.notifications_outlined,
+    {AppRole.customer, AppRole.manager, AppRole.staff},
+  ),
   const MenuEntry(
     '/customer/orders',
     'My orders',
