@@ -79,6 +79,14 @@ class ResultsPage extends ConsumerWidget {
                     ),
                   ),
                 ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => ResultHistoryPage(orderId: orderId),
+                  ),
+                ),
+                child: Text(context.tr('Result history', 'Lịch sử bàn giao')),
+              ),
               if (review['canSubmitRevision'] == true &&
                   items.any((item) => item['canRequestRevision'] != false))
                 OutlinedButton(
@@ -257,3 +265,107 @@ String? validateRevisionNotes(BuildContext context, Json values) =>
         'Ghi chú tối đa 2.000 ký tự.',
       )
     : null;
+
+class ResultHistoryPage extends ConsumerStatefulWidget {
+  const ResultHistoryPage({super.key, required this.orderId});
+  final String orderId;
+
+  @override
+  ConsumerState<ResultHistoryPage> createState() => _ResultHistoryPageState();
+}
+
+class _ResultHistoryPageState extends ConsumerState<ResultHistoryPage> {
+  static const pageSize = 20;
+  int page = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final api = ref.watch(apiProvider);
+    return PortalScaffold(
+      appBar: AppBar(
+        title: Text(context.tr('Result history', 'Lịch sử bàn giao')),
+      ),
+      body: RemoteView(
+        key: ValueKey(page),
+        load: () => api.request(
+          '/api/orders/${segment(widget.orderId)}/result-review/history',
+          query: {'page': page, 'size': pageSize},
+        ),
+        builder: (context, data, reload) {
+          final history = object(data);
+          final rounds = records(history['rounds']);
+          final total = history['totalItems'] as num? ?? rounds.length;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (rounds.isEmpty)
+                Text(
+                  context.tr(
+                    'No delivery rounds yet.',
+                    'Chưa có vòng bàn giao.',
+                  ),
+                ),
+              for (final round in rounds)
+                Card(
+                  child: ExpansionTile(
+                    title: Text(
+                      context.tr(
+                        'Round ${round['roundNumber']}',
+                        'Vòng ${round['roundNumber']}',
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${round['status']} · ${round['publishedAt']}',
+                    ),
+                    children: [
+                      for (final item in records(round['items']))
+                        ExpansionTile(
+                          title: Text('${item['title']}'),
+                          children: [
+                            for (final evidence in records(item['evidence']))
+                              ListTile(
+                                title: Text('${evidence['fileName']}'),
+                                subtitle: Text(
+                                  '${evidence['accessReason'] ?? evidence['type']}',
+                                ),
+                                trailing: evidence['url'] == null
+                                    ? null
+                                    : const Icon(Icons.open_in_new),
+                                onTap: evidence['url'] == null
+                                    ? null
+                                    : () => runAction(
+                                        context,
+                                        () => openExternal(evidence['url']),
+                                      ),
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              if (page > 0 || (page + 1) * pageSize < total)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: page == 0
+                          ? null
+                          : () => setState(() => page--),
+                      child: Text(context.tr('Previous', 'Trang trước')),
+                    ),
+                    Text('${page + 1}'),
+                    TextButton(
+                      onPressed: (page + 1) * pageSize >= total
+                          ? null
+                          : () => setState(() => page++),
+                      child: Text(context.tr('Next', 'Trang sau')),
+                    ),
+                  ],
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
