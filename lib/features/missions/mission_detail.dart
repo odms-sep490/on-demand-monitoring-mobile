@@ -182,7 +182,61 @@ class MissionDetailPage extends ConsumerWidget {
                             assignment['replacementCompleted'] != true
                         ? () => replace(assignment, device: true)
                         : null,
-                    trailing: planning
+                    trailing:
+                        canReplace &&
+                            assignment['id'] != null &&
+                            assignment['replacementRequestedAt'] != null &&
+                            assignment['replacementCompleted'] != true
+                        ? IconButton(
+                            tooltip: context.tr(
+                              'Cancel replacement request',
+                              'Hủy yêu cầu thay thiết bị',
+                            ),
+                            icon: const Icon(Icons.cancel_outlined),
+                            onPressed: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (dialog) => AlertDialog(
+                                  title: Text(
+                                    context.tr(
+                                      'Cancel this replacement request?',
+                                      'Hủy yêu cầu thay thiết bị này?',
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(dialog, false),
+                                      child: Text(
+                                        context.tr('Back', 'Quay lại'),
+                                      ),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () =>
+                                          Navigator.pop(dialog, true),
+                                      child: Text(
+                                        context.tr(
+                                          'Cancel request',
+                                          'Hủy yêu cầu',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed != true || !context.mounted) return;
+                              if (await runAction(
+                                context,
+                                () => api.request(
+                                  '$path/device-replacement-requests/${segment('${assignment['id']}')}',
+                                  method: 'DELETE',
+                                ),
+                              )) {
+                                reload();
+                              }
+                            },
+                          )
+                        : planning
                         ? IconButton(
                             tooltip: context.tr(
                               'Remove assignment',
