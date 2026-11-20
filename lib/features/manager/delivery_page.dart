@@ -1,3 +1,8 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
+import '../../core/api_client.dart';
 import '../../shared/portal_scaffold.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -354,29 +359,83 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                         );
                         if (confirmation == null || !context.mounted) return;
                         setState(() => publishing = true);
-                        final saved = await runAction(
-                          context,
-                          () => api.request(
-                            '$path/delivery/checklists/publish',
-                            method: 'POST',
-                            body: {
-                              'clientRequestId': newRequestId(),
-                              'expectedDeliveryVersion':
-                                  delivery['deliveryVersion'],
-                              'baseReviewRoundId':
-                                  delivery['currentReviewRoundId'],
-                              'expectedReviewRoundVersion':
-                                  delivery['currentReviewRoundVersion'],
-                              'notes': confirmation['notes'] ?? '',
-                              'confirmSurplus': false,
-                              'surplusConfirmationFingerprint': null,
-                              'checklists': operations(),
-                            },
-                          ),
-                        );
+                        final endpoint = '$path/delivery/checklists/publish';
+                        final body = <String, dynamic>{
+                          'expectedDeliveryVersion':
+                              delivery['deliveryVersion'],
+                          'baseReviewRoundId': delivery['currentReviewRoundId'],
+                          'expectedReviewRoundVersion':
+                              delivery['currentReviewRoundVersion'],
+                          'notes': confirmation['notes'] ?? '',
+                          'confirmSurplus': false,
+                          'surplusConfirmationFingerprint': null,
+                          'checklists': operations(),
+                        };
+                        bool published = false;
+                        await runAction(context, () async {
+                          try {
+                            await api.command(endpoint, body: body);
+                            published = true;
+                          } on ApiFailure catch (failure) {
+                            if (failure.code !=
+                                'DELIVERY_SURPLUS_CONFIRMATION_REQUIRED') {
+                              rethrow;
+                            }
+                            if (!context.mounted) return;
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (dialog) => AlertDialog(
+                                title: Text(
+                                  context.tr(
+                                    'Publish surplus evidence?',
+                                    'Bàn giao dư minh chứng?',
+                                  ),
+                                ),
+                                content: Text(
+                                  context.tr(
+                                    'This selection exceeds the requested evidence count. Confirm to publish the full selection.',
+                                    'Số minh chứng đã chọn vượt số lượng yêu cầu. Xác nhận để bàn giao toàn bộ.',
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dialog, false),
+                                    child: Text(context.tr('Back', 'Quay lại')),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dialog, true),
+                                    child: Text(
+                                      context.tr(
+                                        'Confirm publish',
+                                        'Xác nhận bàn giao',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmed != true || !context.mounted) return;
+                            await api.command(
+                              endpoint,
+                              body: {
+                                ...body,
+                                'confirmSurplus': true,
+                                'surplusConfirmationFingerprint':
+                                    deliveryPublishFingerprint(
+                                      widget.orderId,
+                                      body,
+                                    ),
+                              },
+                            );
+                            published = true;
+                          }
+                          return null;
+                        }, showSuccess: () => published);
                         if (mounted) {
                           setState(() => publishing = false);
-                          if (saved) {
+                          if (published) {
                             selection.clear();
                             restoredReplacements.clear();
                             notes = '';
@@ -564,4 +623,43 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
       ),
     );
   }
+}
+
+String deliveryPublishFingerprint(String orderId, Json body) {
+  final canonical = StringBuffer()
+    ..writeln(orderId)
+    ..writeln(body['baseReviewRoundId'] ?? '')
+    ..writeln(body['expectedReviewRoundVersion'] ?? '')
+    ..writeln((body['notes'] as String).trim());
+  final items = records(body['checklists']).toList()
+    ..sort(
+      (a, b) => (a['orderChecklistItemId'] as String).compareTo(
+        b['orderChecklistItemId'] as String,
+      ),
+    );
+  for (final item in items) {
+    canonical.write("${item['orderChecklistItemId']}|");
+    for (final (key, prefix) in [
+      ('addMediaAssetIds', 'A'),
+      ('removeRoundEvidenceIds', 'D'),
+    ]) {
+      final ids = List<String>.from(item[key] as List)..sort();
+      for (final id in ids) {
+        canonical.write('$prefix:$id;');
+      }
+    }
+    final replacements = records(item['replacements']).toList()
+      ..sort(
+        (a, b) => (a['sourceRoundEvidenceId'] as String).compareTo(
+          b['sourceRoundEvidenceId'] as String,
+        ),
+      );
+    for (final row in replacements) {
+      canonical.write(
+        "R:${row['sourceRoundEvidenceId']}:${row['newMediaAssetId']};",
+      );
+    }
+    canonical.writeln();
+  }
+  return sha256.convert(utf8.encode(canonical.toString())).toString();
 }
