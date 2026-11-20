@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,7 +26,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
   Widget build(BuildContext context) {
     final api = ref.watch(apiProvider),
         path = '/api/manager/orders/${segment(widget.orderId)}';
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Publish results', 'Bàn giao kết quả')),
       ),
