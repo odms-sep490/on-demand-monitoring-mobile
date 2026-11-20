@@ -36,6 +36,78 @@ class MissionDetailPage extends ConsumerWidget {
           final mission = object(object(value)['mission']),
               permissions = object(object(value)['permissions']);
           final planning = manager && mission['status'] == 'PLANNING';
+          final canReplace =
+              manager &&
+              ['PENDING_CONFIRMATION', 'READY'].contains(mission['status']);
+          Future<void> replace(Json assignment, {required bool device}) async {
+            final key = device ? 'deviceId' : 'staffId';
+            final group = device ? 'deviceAssignments' : 'staffAssignments';
+            final assignmentId = assignment[device ? 'id' : 'staffId'];
+            if (assignmentId == null) return;
+            final current = records(mission[group]);
+            final excluded = current
+                .where(
+                  (row) =>
+                      device ||
+                      current.any(
+                        (target) =>
+                            target['staffId'] == assignmentId &&
+                            target['assignedRole'] == row['assignedRole'],
+                      ),
+                )
+                .map((row) => row[key])
+                .toSet();
+            final body = await editRecord(
+              context,
+              title: context.tr('Replace resource', 'Thay thế nguồn lực'),
+              fields: [
+                FieldSpec(
+                  key,
+                  'Replacement',
+                  'Thay thế',
+                  kind: FieldKind.choice,
+                  loadOptions: () async {
+                    final candidates = records(
+                      await api.request(
+                        device
+                            ? '/api/drones/available'
+                            : '/api/operators/available',
+                        query: {'missionId': id},
+                      ),
+                    );
+                    return {
+                      for (final candidate in candidates)
+                        if (candidate['id'] != null &&
+                            !excluded.contains(candidate['id']))
+                          '${candidate['id']}':
+                              '${candidate['fullName'] ?? candidate['name'] ?? candidate['code'] ?? candidate['id']}',
+                    };
+                  },
+                ),
+                const FieldSpec(
+                  'reason',
+                  'Reason',
+                  'Lý do',
+                  kind: FieldKind.multiline,
+                ),
+              ],
+            );
+            if (body == null || !context.mounted) return;
+            final collection = device
+                ? 'device-assignments'
+                : 'staff-assignments';
+            if (await runAction(
+              context,
+              () => api.request(
+                '$path/$collection/${segment('$assignmentId')}/resource',
+                method: 'PUT',
+                body: body,
+              ),
+            )) {
+              reload();
+            }
+          }
+
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
@@ -69,6 +141,10 @@ class MissionDetailPage extends ConsumerWidget {
                     subtitle: Text(
                       '${assignment['assignedRole']} · ${assignment['responseStatus']}',
                     ),
+                    onTap:
+                        canReplace && assignment['responseStatus'] == 'REJECTED'
+                        ? () => replace(assignment, device: false)
+                        : null,
                     trailing: planning
                         ? IconButton(
                             tooltip: context.tr(
@@ -100,6 +176,9 @@ class MissionDetailPage extends ConsumerWidget {
                     subtitle: Text(
                       '${assignment['deviceRole']} · ${assignment['status']}',
                     ),
+                    onTap: canReplace
+                        ? () => replace(assignment, device: true)
+                        : null,
                     trailing: planning
                         ? IconButton(
                             tooltip: context.tr(
