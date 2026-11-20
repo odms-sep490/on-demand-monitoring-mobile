@@ -123,8 +123,7 @@ class ResultsPage extends ConsumerWidget {
                                             review['reviewRoundId'],
                                         'expectedRoundVersion':
                                             review['roundVersion'],
-                                        'clientRequestId':
-                                            'mobile-${DateTime.now().microsecondsSinceEpoch}',
+                                        'clientRequestId': newRequestId(),
                                         'generalNote': body['note'],
                                         'items': [
                                           {

@@ -134,8 +134,7 @@ class CancellationPage extends ConsumerWidget {
                                   ? contract['version']
                                   : cancellation['version'],
                               if (cancellation.isEmpty)
-                                'clientRequestId':
-                                    'mobile-${DateTime.now().microsecondsSinceEpoch}',
+                                'clientRequestId': newRequestId(),
                             },
                           ),
                         )) {

@@ -1,3 +1,7 @@
+import 'package:uuid/uuid.dart';
+
+String newRequestId() => const Uuid().v4();
+
 typedef Json = Map<String, dynamic>;
 
 enum AppRole { customer, staff, manager }
