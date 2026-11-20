@@ -155,7 +155,7 @@ class MediaUploader {
       onProgress(1);
     } catch (failure) {
       final event = {
-        'eventId': 'mobile-${DateTime.now().microsecondsSinceEpoch}',
+        'eventId': newRequestId(),
         'category': transferred ? 'TRANSFER_ACK_LOST' : 'TRANSFER_FAILED',
         'missionId': missionId,
         'mediaId': plan['mediaId'],

@@ -167,8 +167,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                             '$path/delivery/checklists/publish',
                             method: 'POST',
                             body: {
-                              'clientRequestId':
-                                  'mobile-${DateTime.now().microsecondsSinceEpoch}',
+                              'clientRequestId': newRequestId(),
                               'expectedDeliveryVersion':
                                   delivery['deliveryVersion'],
                               'baseReviewRoundId':
@@ -278,8 +277,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                             body: {
                               ...body,
                               'expectedCaseVersion': revision['version'],
-                              'clientRequestId':
-                                  'mobile-${DateTime.now().microsecondsSinceEpoch}',
+                              'clientRequestId': newRequestId(),
                             },
                           ),
                         )) {

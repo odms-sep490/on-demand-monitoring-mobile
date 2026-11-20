@@ -10,6 +10,7 @@ import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import 'finance_page.dart';
 import 'order_actions.dart';
+import 'order_confirmation.dart';
 import 'checklist_editor.dart';
 import '../manager/pricing_page.dart';
 import '../manager/delivery_page.dart';
@@ -86,6 +87,21 @@ class OrderDetailPage extends ConsumerWidget {
                 ),
               ),
               OrderActions(order: order, manager: manager, reload: reload),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => SiteAdvisoryPage(order: order),
+                  ),
+                ),
+                icon: const Icon(Icons.cloud_outlined),
+                label: Text(
+                  context.tr(
+                    'Site and weather assessment',
+                    'Thời tiết và đánh giá khu vực',
+                  ),
+                ),
+              ),
               if (!manager && order['canEditChecklist'] == true)
                 OutlinedButton(
                   onPressed: () async {

@@ -52,6 +52,25 @@ class ApiClient {
   void Function()? onExpired;
   bool rememberMe = false;
   int _generation = 0;
+  final Map<String, (String, String)> _commands = {};
+  String commandId(String operation, Json payload) {
+    final serialized = jsonEncode(payload);
+    final prior = _commands[operation];
+    if (prior != null && prior.$1 == serialized) return prior.$2;
+    final id = newRequestId();
+    _commands[operation] = (serialized, id);
+    return id;
+  }
+
+  Future<Object?> command(
+    String path, {
+    String method = 'POST',
+    required Json body,
+  }) => request(
+    path,
+    method: method,
+    body: {...body, 'clientRequestId': commandId(path, body)},
+  );
   String get _cookieKey =>
       'odms.cookies.${Uri.parse(dio.options.baseUrl).authority}';
 
@@ -73,6 +92,7 @@ class ApiClient {
 
   Future<void> clearSession() async {
     _generation++;
+    _commands.clear();
     accessToken = null;
     _cookies.clear();
     rememberMe = false;
