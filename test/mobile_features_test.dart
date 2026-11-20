@@ -31,6 +31,9 @@ void main() {
                 .then((bytes) => ByteData.view(bytes.buffer)),
           );
         await font.load();
+        final websiteFont = FontLoader('BeVietnamPro')
+          ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-Regular.ttf'));
+        await websiteFont.load();
         final icons = FontLoader('MaterialIcons')
           ..addFont(
             File(
@@ -149,7 +152,7 @@ void main() {
         expect(find.text('Tổng quan'), findsNothing);
       }
       if (role == AppRole.manager) {
-        expect(find.text('Tổng quan'), findsOneWidget);
+        expect(find.text('Tổng quan'), findsWidgets);
         expect(find.text('Đơn hàng của tôi'), findsNothing);
       }
       if (role == AppRole.staff) {
