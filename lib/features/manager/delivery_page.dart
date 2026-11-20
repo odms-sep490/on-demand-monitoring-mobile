@@ -22,6 +22,8 @@ class ManagerDeliveryPage extends ConsumerStatefulWidget {
 class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
   final Map<String, List<String>> selection = {};
   bool publishing = false;
+  String notes = '';
+  final restoredReplacements = <String, List<Json>>{};
   @override
   Widget build(BuildContext context) {
     final api = ref.watch(apiProvider),
@@ -33,12 +35,49 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
       body: RemoteView(
         load: () async => {
           'delivery': await api.request('$path/delivery/checklists'),
+          'draft': await optionalResource(api, '$path/delivery/draft'),
           'case': await optionalResource(api, '$path/result-revision-case'),
         },
         builder: (context, value, reload) {
           final delivery = object(object(value)['delivery']),
               revision = object(object(value)['case']);
           final checklists = records(delivery['checklists']);
+          final draft = object(object(value)['draft']);
+          List<Json> operations() => checklists.map((item) {
+            final current = records(item['currentBundle']);
+            final chosen =
+                selection['${item['orderChecklistItemId']}'] ??
+                current.map((e) => '${e['mediaAssetId']}').toList();
+            final replacements =
+                restoredReplacements['${item['orderChecklistItemId']}'] ??
+                <Json>[];
+            return {
+              'orderChecklistItemId': item['orderChecklistItemId'],
+              'addMediaAssetIds': chosen
+                  .where(
+                    (id) =>
+                        !replacements.any(
+                          (row) => row['newMediaAssetId'] == id,
+                        ) &&
+                        !current.any((e) => e['mediaAssetId'] == id),
+                  )
+                  .toList(),
+              'removeRoundEvidenceIds': current
+                  .where(
+                    (e) =>
+                        !chosen.contains(e['mediaAssetId']) &&
+                        !replacements.any(
+                          (row) =>
+                              row['sourceRoundEvidenceId'] ==
+                              e['roundEvidenceId'],
+                        ),
+                  )
+                  .map((e) => e['roundEvidenceId'])
+                  .where((id) => id != null)
+                  .toList(),
+              'replacements': replacements,
+            };
+          }).toList();
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
@@ -92,6 +131,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                                         'Customer evidence selection',
                                         'Minh chứng bàn giao cho khách',
                                         kind: FieldKind.multiChoice,
+                                        required: false,
                                         initial:
                                             selection['${item['orderChecklistItemId']}'] ??
                                             records(item['currentBundle'])
@@ -108,12 +148,14 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                                     ],
                                   );
                                   if (body != null && mounted) {
-                                    setState(
-                                      () =>
-                                          selection['${item['orderChecklistItemId']}'] =
-                                              (body['ids'] as List)
-                                                  .cast<String>(),
-                                    );
+                                    setState(() {
+                                      final key =
+                                          '${item['orderChecklistItemId']}';
+                                      restoredReplacements.remove(key);
+                                      selection[key] =
+                                          (body['ids'] as List? ?? [])
+                                              .cast<String>();
+                                    });
                                   }
                                 },
                           child: Text(
@@ -133,6 +175,156 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                     ),
                   ),
                 ),
+              if (draft['version'] != null) ...[
+                if (draft['stale'] == true)
+                  Text(
+                    context.tr('The draft is stale.', 'Bản nháp đã lỗi thời.'),
+                  ),
+                OutlinedButton(
+                  onPressed: publishing || draft['stale'] == true
+                      ? null
+                      : () {
+                          setState(() {
+                            notes = '${draft['notes'] ?? ''}';
+                            selection.clear();
+                            restoredReplacements.clear();
+                            for (final item in checklists) {
+                              final id = '${item['orderChecklistItemId']}';
+                              final saved = records(draft['checklists'])
+                                  .firstWhere(
+                                    (row) =>
+                                        row['orderChecklistItemId'] ==
+                                        item['orderChecklistItemId'],
+                                    orElse: () => <String, dynamic>{},
+                                  );
+                              final removed =
+                                  (saved['removeRoundEvidenceIds'] as List? ??
+                                          [])
+                                      .toSet();
+                              final replacements = records(
+                                saved['replacements'],
+                              );
+                              final replaced = replacements
+                                  .map((row) => row['sourceRoundEvidenceId'])
+                                  .toSet();
+                              restoredReplacements[id] = replacements;
+                              selection[id] = {
+                                for (final asset in records(
+                                  item['currentBundle'],
+                                ))
+                                  if (!removed.contains(
+                                        asset['roundEvidenceId'],
+                                      ) &&
+                                      !replaced.contains(
+                                        asset['roundEvidenceId'],
+                                      ))
+                                    '${asset['mediaAssetId']}',
+                                for (final asset
+                                    in saved['addMediaAssetIds'] as List? ?? [])
+                                  '$asset',
+                                for (final row in replacements)
+                                  '${row['newMediaAssetId']}',
+                              }.toList();
+                            }
+                          });
+                        },
+                  child: Text(
+                    context.tr('Restore server draft', 'Mở bản nháp đã lưu'),
+                  ),
+                ),
+                TextButton(
+                  onPressed: publishing
+                      ? null
+                      : () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (dialog) => AlertDialog(
+                              title: Text(
+                                context.tr(
+                                  'Delete saved draft?',
+                                  'Xóa bản nháp đã lưu?',
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(dialog, false),
+                                  child: Text(context.tr('Cancel', 'Hủy')),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(dialog, true),
+                                  child: Text(context.tr('Delete', 'Xóa')),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true || !context.mounted) return;
+                          setState(() => publishing = true);
+                          final deleted = await runAction(
+                            context,
+                            () => api.request(
+                              '$path/delivery/draft',
+                              method: 'DELETE',
+                              query: {'expectedDraftVersion': draft['version']},
+                            ),
+                          );
+                          if (!mounted) return;
+                          setState(() => publishing = false);
+                          if (deleted) reload();
+                        },
+                  child: Text(
+                    context.tr('Delete server draft', 'Xóa bản nháp đã lưu'),
+                  ),
+                ),
+              ],
+              OutlinedButton(
+                onPressed: publishing
+                    ? null
+                    : () async {
+                        final body = await editRecord(
+                          context,
+                          title: context.tr(
+                            'Save delivery draft',
+                            'Lưu bản nháp bàn giao',
+                          ),
+                          initial: {'notes': notes},
+                          fields: const [
+                            FieldSpec(
+                              'notes',
+                              'Notes',
+                              'Ghi chú',
+                              kind: FieldKind.multiline,
+                              required: false,
+                            ),
+                          ],
+                        );
+                        if (body == null || !context.mounted) return;
+                        setState(() {
+                          publishing = true;
+                          notes = '${body['notes'] ?? ''}';
+                        });
+                        final saved = await runAction(
+                          context,
+                          () => api.request(
+                            '$path/delivery/draft',
+                            method: 'PUT',
+                            body: {
+                              'expectedDraftVersion': draft['version'] ?? 0,
+                              'caseId': revision['caseId'],
+                              'baseReviewRoundId':
+                                  delivery['currentReviewRoundId'],
+                              'expectedDeliveryVersion':
+                                  delivery['deliveryVersion'],
+                              'notes': notes,
+                              'checklists': operations(),
+                            },
+                          ),
+                        );
+                        if (!mounted) return;
+                        setState(() => publishing = false);
+                        if (saved) reload();
+                      },
+                child: Text(context.tr('Save draft', 'Lưu bản nháp')),
+              ),
               FilledButton(
                 onPressed: publishing
                     ? null
@@ -143,6 +335,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                             'Publish results',
                             'Bàn giao kết quả',
                           ),
+                          initial: {'notes': notes},
                           fields: const [
                             FieldSpec(
                               'notes',
@@ -177,34 +370,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                               'notes': confirmation['notes'] ?? '',
                               'confirmSurplus': false,
                               'surplusConfirmationFingerprint': null,
-                              'checklists': checklists.map((item) {
-                                final current = records(item['currentBundle']);
-                                final chosen =
-                                    selection['${item['orderChecklistItemId']}'] ??
-                                    current
-                                        .map((e) => '${e['mediaAssetId']}')
-                                        .toList();
-                                return {
-                                  'orderChecklistItemId':
-                                      item['orderChecklistItemId'],
-                                  'addMediaAssetIds': chosen
-                                      .where(
-                                        (id) => !current.any(
-                                          (e) => e['mediaAssetId'] == id,
-                                        ),
-                                      )
-                                      .toList(),
-                                  'removeRoundEvidenceIds': current
-                                      .where(
-                                        (e) =>
-                                            !chosen.contains(e['mediaAssetId']),
-                                      )
-                                      .map((e) => e['roundEvidenceId'])
-                                      .where((id) => id != null)
-                                      .toList(),
-                                  'replacements': <Object>[],
-                                };
-                              }).toList(),
+                              'checklists': operations(),
                             },
                           ),
                         );
@@ -212,6 +378,8 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                           setState(() => publishing = false);
                           if (saved) {
                             selection.clear();
+                            restoredReplacements.clear();
+                            notes = '';
                             reload();
                           }
                         }

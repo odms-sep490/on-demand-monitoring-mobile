@@ -36,6 +36,78 @@ class MissionDetailPage extends ConsumerWidget {
           final mission = object(object(value)['mission']),
               permissions = object(object(value)['permissions']);
           final planning = manager && mission['status'] == 'PLANNING';
+          final canReplace =
+              manager &&
+              ['PENDING_CONFIRMATION', 'READY'].contains(mission['status']);
+          Future<void> replace(Json assignment, {required bool device}) async {
+            final key = device ? 'deviceId' : 'staffId';
+            final group = device ? 'deviceAssignments' : 'staffAssignments';
+            final assignmentId = assignment[device ? 'id' : 'staffId'];
+            if (assignmentId == null) return;
+            final current = records(mission[group]);
+            final excluded = current
+                .where(
+                  (row) =>
+                      device ||
+                      current.any(
+                        (target) =>
+                            target['staffId'] == assignmentId &&
+                            target['assignedRole'] == row['assignedRole'],
+                      ),
+                )
+                .map((row) => row[key])
+                .toSet();
+            final body = await editRecord(
+              context,
+              title: context.tr('Replace resource', 'Thay thế nguồn lực'),
+              fields: [
+                FieldSpec(
+                  key,
+                  'Replacement',
+                  'Thay thế',
+                  kind: FieldKind.choice,
+                  loadOptions: () async {
+                    final candidates = records(
+                      await api.request(
+                        device
+                            ? '/api/drones/available'
+                            : '/api/operators/available',
+                        query: {'missionId': id},
+                      ),
+                    );
+                    return {
+                      for (final candidate in candidates)
+                        if (candidate['id'] != null &&
+                            !excluded.contains(candidate['id']))
+                          '${candidate['id']}':
+                              '${candidate['fullName'] ?? candidate['name'] ?? candidate['code'] ?? candidate['id']}',
+                    };
+                  },
+                ),
+                const FieldSpec(
+                  'reason',
+                  'Reason',
+                  'Lý do',
+                  kind: FieldKind.multiline,
+                ),
+              ],
+            );
+            if (body == null || !context.mounted) return;
+            final collection = device
+                ? 'device-assignments'
+                : 'staff-assignments';
+            if (await runAction(
+              context,
+              () => api.request(
+                '$path/$collection/${segment('$assignmentId')}/resource',
+                method: 'PUT',
+                body: body,
+              ),
+            )) {
+              reload();
+            }
+          }
+
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
@@ -69,6 +141,10 @@ class MissionDetailPage extends ConsumerWidget {
                     subtitle: Text(
                       '${assignment['assignedRole']} · ${assignment['responseStatus']}',
                     ),
+                    onTap:
+                        canReplace && assignment['responseStatus'] == 'REJECTED'
+                        ? () => replace(assignment, device: false)
+                        : null,
                     trailing: planning
                         ? IconButton(
                             tooltip: context.tr(
@@ -100,6 +176,12 @@ class MissionDetailPage extends ConsumerWidget {
                     subtitle: Text(
                       '${assignment['deviceRole']} · ${assignment['status']}',
                     ),
+                    onTap:
+                        canReplace &&
+                            assignment['replacementRequestedAt'] != null &&
+                            assignment['replacementCompleted'] != true
+                        ? () => replace(assignment, device: true)
+                        : null,
                     trailing: planning
                         ? IconButton(
                             tooltip: context.tr(
@@ -123,6 +205,153 @@ class MissionDetailPage extends ConsumerWidget {
                   ),
                 ),
               if (manager) ...[
+                if (planning)
+                  for (final estimate in [true, false])
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => PortalScaffold(
+                            appBar: AppBar(
+                              title: Text(
+                                estimate
+                                    ? context.tr(
+                                        'Resource estimate',
+                                        'Ước tính nguồn lực',
+                                      )
+                                    : context.tr(
+                                        'Resource recommendations',
+                                        'Đề xuất nguồn lực',
+                                      ),
+                              ),
+                            ),
+                            body: RemoteView(
+                              load: () => api.request(
+                                estimate
+                                    ? '/api/manager/missions/${segment(id)}/ai/resource-estimate'
+                                    : '$path/recommendations',
+                                method: 'POST',
+                              ),
+                              builder: (context, data, reload) {
+                                final result = object(data);
+                                return ListView(
+                                  padding: const EdgeInsets.all(16),
+                                  children: [
+                                    if (estimate) ...[
+                                      DetailFields(
+                                        data: result,
+                                        fields: const {
+                                          'summary': ('Summary', 'Tóm tắt'),
+                                          'estimatedStaffCount': (
+                                            'Staff',
+                                            'Nhân sự',
+                                          ),
+                                          'estimatedDeviceCount': (
+                                            'Devices',
+                                            'Thiết bị',
+                                          ),
+                                          'assumptions': (
+                                            'Assumptions',
+                                            'Giả định',
+                                          ),
+                                        },
+                                      ),
+                                      for (final row in [
+                                        ...records(result['staffByRole']),
+                                        ...records(result['devicesByType']),
+                                      ])
+                                        ListTile(
+                                          title: Text(
+                                            "${row['role'] ?? row['deviceTypeCode']} · ${row['count']}",
+                                          ),
+                                          subtitle: Text(
+                                            "${row['reason'] ?? ''}",
+                                          ),
+                                        ),
+                                    ] else ...[
+                                      DetailFields(
+                                        data: object(result['aiEstimation']),
+                                        fields: const {
+                                          'reason': ('Reason', 'Lý do'),
+                                          'recommendedDevices': (
+                                            'Recommended devices',
+                                            'Thiết bị đề xuất',
+                                          ),
+                                          'warnings': ('Warnings', 'Cảnh báo'),
+                                        },
+                                      ),
+                                      if (records(result['recommendations'])
+                                          .isEmpty)
+                                        Text(
+                                          context.tr(
+                                            'No recommendation available.',
+                                            'Chưa có đề xuất.',
+                                          ),
+                                        ),
+                                      for (final row in records(
+                                        result['recommendations'],
+                                      ))
+                                        Card(
+                                          child: ExpansionTile(
+                                            title: Text(
+                                              "${row['date']} · ${row['riskLevel']}",
+                                            ),
+                                            children: [
+                                              DetailFields(
+                                                data: row,
+                                                fields: const {
+                                                  'availableStaffCount': (
+                                                    'Available staff',
+                                                    'Nhân sự khả dụng',
+                                                  ),
+                                                  'availableDeviceCount': (
+                                                    'Available devices',
+                                                    'Thiết bị khả dụng',
+                                                  ),
+                                                  'deviceShortageCount': (
+                                                    'Device shortage',
+                                                    'Thiếu thiết bị',
+                                                  ),
+                                                  'staffShortageCount': (
+                                                    'Staff shortage',
+                                                    'Thiếu nhân sự',
+                                                  ),
+                                                  'warnings': (
+                                                    'Warnings',
+                                                    'Cảnh báo',
+                                                  ),
+                                                },
+                                              ),
+                                              for (final candidate in records(
+                                                row['deviceCandidates'],
+                                              ))
+                                                ListTile(
+                                                  title: Text(
+                                                    "${candidate['code']} · ${candidate['name']}",
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        estimate
+                            ? context.tr(
+                                'Estimate resources',
+                                'Ước tính nguồn lực',
+                              )
+                            : context.tr(
+                                'Suggest resources',
+                                'Đề xuất nguồn lực',
+                              ),
+                      ),
+                    ),
                 ManagerMissionActions(
                   mission: mission,
                   permissions: permissions,
