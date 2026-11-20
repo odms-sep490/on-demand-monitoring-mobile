@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -43,7 +45,7 @@ class _LiveStatusPageState extends ConsumerState<LiveStatusPage>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => PortalScaffold(
     appBar: AppBar(
       title: Text(context.tr('Monitoring status', 'Tình trạng giám sát')),
     ),

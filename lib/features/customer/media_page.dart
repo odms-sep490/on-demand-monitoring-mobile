@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,7 +14,7 @@ class CustomerMediaPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider);
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Media library', 'Thư viện dữ liệu')),
       ),
@@ -24,7 +26,7 @@ class CustomerMediaPage extends ConsumerWidget {
           onTap: (item) => Navigator.push(
             context,
             MaterialPageRoute<void>(
-              builder: (_) => Scaffold(
+              builder: (_) => PortalScaffold(
                 appBar: AppBar(title: Text('${item['fileName'] ?? ''}')),
                 body: ListView(
                   padding: const EdgeInsets.all(24),

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../shared/strings.dart';
-import '../../shared/odms_mark.dart';
 import 'session.dart';
 
 enum AuthMode { login, register, verify, forgot, reset, firstLogin }
@@ -160,7 +159,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const OdmsMark(size: 64),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width: 76,
+                        height: 76,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'ODMS',

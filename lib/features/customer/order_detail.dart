@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,7 +23,7 @@ class OrderDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider), path = '/api/orders/${segment(id)}';
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Order details', 'Chi tiết đơn hàng')),
       ),
@@ -226,7 +228,7 @@ class CustomerMissionsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider),
         path = '/api/customer/orders/${segment(orderId)}/missions';
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Missions and reports', 'Nhiệm vụ và báo cáo')),
       ),
@@ -239,7 +241,7 @@ class CustomerMissionsPage extends ConsumerWidget {
             Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => Scaffold(
+                builder: (_) => PortalScaffold(
                   appBar: AppBar(title: Text('${mission['missionCode']}')),
                   body: RemoteView(
                     load: () => api.request(
