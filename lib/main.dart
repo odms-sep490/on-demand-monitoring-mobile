@@ -1,20 +1,9 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'app/theme.dart';
+import 'app/app.dart';
 
-void main() => runApp(
-  const MaterialApp(
-    localizationsDelegates: GlobalMaterialLocalizations.delegates,
-    supportedLocales: [Locale('vi'), Locale('en')],
-    home: FoundationScreen(),
-  ),
-);
-
-class FoundationScreen extends StatelessWidget {
-  const FoundationScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Theme(
-    data: odmsTheme(),
-    child: const Scaffold(body: Center(child: Text('ODMS Mobile'))),
-  );
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ProviderScope(child: OdmsApp()));
 }
