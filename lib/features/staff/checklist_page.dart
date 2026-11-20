@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,7 +17,7 @@ class ChecklistPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider),
         path = '/api/missions/${segment(missionId)}';
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Monitoring inspection', 'Kiểm tra giám sát')),
       ),

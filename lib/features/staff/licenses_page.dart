@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -94,7 +96,7 @@ class _LicensesPageState extends ConsumerState<LicensesPage> {
   @override
   Widget build(BuildContext context) {
     final api = ref.watch(apiProvider), user = ref.watch(sessionProvider).user!;
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('My qualifications', 'Chứng chỉ của tôi')),
       ),
@@ -162,6 +164,9 @@ class _LicensesPageState extends ConsumerState<LicensesPage> {
                             'file': await MultipartFile.fromFile(
                               files.single.path!,
                               filename: files.single.name,
+                              contentType: DioMediaType.parse(
+                                fileMime(files.single.name),
+                              ),
                             ),
                           });
                           if (context.mounted &&

@@ -16,6 +16,7 @@ import '../features/staff/checklist_page.dart';
 import '../features/staff/evidence_page.dart';
 import '../features/staff/licenses_page.dart';
 import '../features/customer/live_status_page.dart';
+import '../features/staff/missions_page.dart';
 import 'app.dart';
 
 List<RouteBase> featureRoutes() => [
@@ -23,7 +24,7 @@ List<RouteBase> featureRoutes() => [
   GoRoute(path: '/staff/licenses', builder: (_, _) => const LicensesPage()),
   GoRoute(
     path: '/staff/missions',
-    builder: (_, _) => const MissionsPage(staff: true),
+    builder: (_, _) => const StaffMissionsPage(),
   ),
   GoRoute(
     path: '/staff/missions/:id',

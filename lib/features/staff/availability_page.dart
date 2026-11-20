@@ -1,3 +1,5 @@
+import '../../shared/portal_scaffold.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -69,7 +71,7 @@ class _AvailabilityPageState extends ConsumerState<AvailabilityPage> {
       }
     }
 
-    return Scaffold(
+    return PortalScaffold(
       appBar: AppBar(title: Text(context.tr('Availability', 'Lịch bận'))),
       body: Column(
         children: [
