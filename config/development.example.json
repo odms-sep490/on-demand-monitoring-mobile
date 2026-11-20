@@ -1,0 +1,6 @@
+{
+  "API_BASE_URL": "http://10.0.2.2:8080",
+  "COGNITO_DOMAIN": "",
+  "COGNITO_CLIENT_ID": "",
+  "OAUTH_REDIRECT_URI": "odms://auth/callback"
+}
