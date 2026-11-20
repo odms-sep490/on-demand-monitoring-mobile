@@ -220,6 +220,75 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                 ),
               ),
               if (revision['active'] == true) ...[
+                OutlinedButton(
+                  onPressed: () async {
+                    final body = await editRecord(
+                      context,
+                      title: context.tr(
+                        'Create rework mission',
+                        'Tạo nhiệm vụ bổ sung',
+                      ),
+                      fields: [
+                        const FieldSpec('scopeLabel', 'Scope', 'Phạm vi'),
+                        const FieldSpec(
+                          'scheduledStartAt',
+                          'Start (device time zone)',
+                          'Bắt đầu (múi giờ thiết bị)',
+                          kind: FieldKind.instant,
+                        ),
+                        const FieldSpec(
+                          'scheduledEndAt',
+                          'End (device time zone)',
+                          'Kết thúc (múi giờ thiết bị)',
+                          kind: FieldKind.instant,
+                        ),
+                        FieldSpec(
+                          'caseItemIds',
+                          'Rework items',
+                          'Hạng mục bổ sung',
+                          kind: FieldKind.multiChoice,
+                          options: {
+                            for (final item in records(
+                              revision['items'],
+                            ).where((e) => e['strategy'] == 'REWORK'))
+                              '${item['caseItemId']}': '${item['title']}',
+                          },
+                        ),
+                      ],
+                      validate: (body) =>
+                          '${body['scheduledStartAt']}'.compareTo(
+                                '${body['scheduledEndAt']}',
+                              ) >=
+                              0
+                          ? context.tr(
+                              'End must follow start.',
+                              'Kết thúc phải sau bắt đầu.',
+                            )
+                          : null,
+                    );
+                    if (body != null &&
+                        context.mounted &&
+                        await runAction(
+                          context,
+                          () => api.request(
+                            '/api/manager/result-revision-cases/${segment('${revision['caseId']}')}/rework-missions',
+                            method: 'POST',
+                            body: {
+                              ...body,
+                              'expectedCaseVersion': revision['version'],
+                              'clientRequestId':
+                                  'mobile-${DateTime.now().microsecondsSinceEpoch}',
+                            },
+                          ),
+                        )) {
+                      reload();
+                    }
+                  },
+                  child: Text(
+                    context.tr('Create rework mission', 'Tạo nhiệm vụ bổ sung'),
+                  ),
+                ),
+
                 const Divider(height: 40),
                 Text(
                   context.tr('Revision case', 'Yêu cầu chỉnh sửa'),

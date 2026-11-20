@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -151,6 +152,65 @@ void main() {
       final api = ApiClient('https://api.example', secrets, transport: dio);
       await expectLater(api.refresh(), throwsA(isA<ApiFailure>()));
       expect(secrets.values['keep'], 'saved');
+    },
+  );
+  test('concurrent expired requests share one refresh operation', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example'));
+    var refreshes = 0;
+    dio.httpClientAdapter = FakeAdapter((options) async {
+      if (options.path == '/api/auth/csrf') return response('csrf');
+      if (options.path == '/api/auth/refresh') {
+        refreshes++;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        return response({'accessToken': 'new'});
+      }
+      return options.headers['Authorization'] == 'Bearer new'
+          ? response({'ok': true})
+          : response(null, status: 401);
+    });
+    final api = ApiClient(
+      'https://api.example',
+      MemorySecrets(),
+      transport: dio,
+    )..accessToken = 'old';
+    final result = await Future.wait([
+      api.request('/api/one'),
+      api.request('/api/two'),
+    ]);
+    expect(result.length, 2);
+    expect(refreshes, 1);
+  });
+  test(
+    'logout rejects stale responses before they can restore cookies',
+    () async {
+      final reply = Completer<ResponseBody>();
+      final dio = Dio(BaseOptions(baseUrl: 'https://api.example'));
+      dio.httpClientAdapter = FakeAdapter((_) => reply.future);
+      final secrets = MemorySecrets();
+      final api = ApiClient('https://api.example', secrets, transport: dio)
+        ..rememberMe = true;
+      final pending = api.request('/api/orders/mine');
+      await api.clearSession();
+      reply.complete(
+        response(
+          {},
+          headers: {
+            'set-cookie': ['OMSS_REFRESH_TOKEN=stale::user; Path=/; Secure'],
+          },
+        ),
+      );
+      await expectLater(
+        pending,
+        throwsA(
+          isA<ApiFailure>().having(
+            (e) => e.message,
+            'message',
+            'Session changed.',
+          ),
+        ),
+      );
+      expect(secrets.values, isEmpty);
+      expect(api.accessToken, isNull);
     },
   );
 }

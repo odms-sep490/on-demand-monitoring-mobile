@@ -7,6 +7,8 @@ import '../../core/providers.dart';
 import '../../shared/external_link.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
+import '../../shared/editor.dart';
+import 'refund_page.dart';
 
 Future<Object?> optionalResource(ApiClient api, String path) async {
   try {
@@ -195,6 +197,91 @@ class _FinancePageState extends ConsumerState<FinancePage> {
                     ),
                   ),
                 ),
+              OutlinedButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => RefundPage(
+                      orderId: widget.orderId,
+                      manager: widget.manager,
+                    ),
+                  ),
+                ),
+                child: Text(context.tr('Deposit refund', 'Hoàn tiền cọc')),
+              ),
+              if (widget.manager && invoice.isNotEmpty) ...[
+                OutlinedButton(
+                  onPressed: () async {
+                    if (await runAction(
+                      context,
+                      () => api.request(
+                        '/api/manager/orders/${segment(widget.orderId)}/mission-payment-milestones/auto-calculate',
+                        method: 'POST',
+                      ),
+                    )) {
+                      reload();
+                    }
+                  },
+                  child: Text(
+                    context.tr(
+                      'Calculate mission payments',
+                      'Tính phân bổ thanh toán nhiệm vụ',
+                    ),
+                  ),
+                ),
+                OutlinedButton(
+                  onPressed: () async {
+                    final allocations = records(
+                      object(object(data)['milestones'])['milestones'],
+                    );
+                    final body = await editRecord(
+                      context,
+                      title: context.tr(
+                        'Allocate mission payments',
+                        'Phân bổ thanh toán nhiệm vụ',
+                      ),
+                      fields: [
+                        for (final entry in allocations)
+                          FieldSpec(
+                            '${entry['missionId']}',
+                            '${entry['missionCode']} (VND)',
+                            '${entry['missionCode']} (VND)',
+                            kind: FieldKind.number,
+                            min: 0,
+                            initial: entry['amount'],
+                          ),
+                      ],
+                    );
+                    if (body != null &&
+                        context.mounted &&
+                        await runAction(
+                          context,
+                          () => api.request(
+                            '/api/manager/orders/${segment(widget.orderId)}/mission-payment-milestones',
+                            method: 'PUT',
+                            body: {
+                              'allocations': body.entries
+                                  .map(
+                                    (e) => {
+                                      'missionId': e.key,
+                                      'amount': e.value,
+                                    },
+                                  )
+                                  .toList(),
+                            },
+                          ),
+                        )) {
+                      reload();
+                    }
+                  },
+                  child: Text(
+                    context.tr(
+                      'Edit payment allocations',
+                      'Sửa phân bổ thanh toán',
+                    ),
+                  ),
+                ),
+              ],
               TextButton(
                 onPressed: reload,
                 child: Text(context.tr('Refresh', 'Làm mới')),

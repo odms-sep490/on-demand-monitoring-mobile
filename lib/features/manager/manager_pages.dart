@@ -172,6 +172,18 @@ class MissionsPage extends ConsumerWidget {
 }
 
 Future<bool> createMission(BuildContext context, ApiClient api) async {
+  try {
+    return await _createMission(context, api);
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
+    }
+    return false;
+  }
+}
+
+Future<bool> _createMission(BuildContext context, ApiClient api) async {
   final selection = await editRecord(
     context,
     title: context.tr('Choose approved order', 'Chọn đơn đã duyệt'),
@@ -231,8 +243,13 @@ Future<bool> createMission(BuildContext context, ApiClient api) async {
 }
 
 class ExecutionPlanPage extends ConsumerWidget {
-  const ExecutionPlanPage({super.key, required this.orderId});
+  const ExecutionPlanPage({
+    super.key,
+    required this.orderId,
+    this.reworkCaseId,
+  });
   final String orderId;
+  final String? reworkCaseId;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final api = ref.watch(apiProvider),
@@ -296,7 +313,9 @@ class ExecutionPlanPage extends ConsumerWidget {
                         await runAction(
                           context,
                           () => api.request(
-                            '$path/finalize',
+                            reworkCaseId == null
+                                ? '$path/finalize'
+                                : '/api/manager/result-revision-cases/${segment(reworkCaseId!)}/rework-plan/finalize',
                             method: 'POST',
                             body: {
                               ...confirmation,
