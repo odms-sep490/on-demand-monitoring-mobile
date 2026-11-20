@@ -162,7 +162,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                       const Icon(
                         Icons.radar,
                         size: 64,
-                        color: Color(0xFF176B52),
+                        color: Color(0xFF1565E8),
                       ),
                       const SizedBox(height: 12),
                       Text(

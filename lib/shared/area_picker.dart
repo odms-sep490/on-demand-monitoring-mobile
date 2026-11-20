@@ -124,8 +124,8 @@ class _AreaPickerState extends State<AreaPicker> {
                   polygons: [
                     Polygon(
                       points: points,
-                      color: const Color(0x33176B52),
-                      borderColor: const Color(0xFF176B52),
+                      color: const Color(0x331565E8),
+                      borderColor: const Color(0xFF1565E8),
                       borderStrokeWidth: 3,
                     ),
                   ],
