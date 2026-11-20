@@ -251,49 +251,6 @@ class ChecklistPage extends ConsumerWidget {
                     ),
                   ),
                 ),
-              if (permissions['canSubmitMissionResult'] == true &&
-                  checklist['readyForSubmission'] == true)
-                FilledButton(
-                  onPressed: () async {
-                    final body = await editRecord(
-                      context,
-                      title: context.tr('Submit report', 'Nộp báo cáo'),
-                      fields: const [
-                        FieldSpec(
-                          'summary',
-                          'Summary',
-                          'Tóm tắt',
-                          kind: FieldKind.multiline,
-                        ),
-                        FieldSpec(
-                          'notes',
-                          'Notes',
-                          'Ghi chú',
-                          kind: FieldKind.multiline,
-                          required: false,
-                        ),
-                      ],
-                    );
-                    if (body != null &&
-                        context.mounted &&
-                        await runAction(
-                          context,
-                          () => api.request(
-                            '$path/result',
-                            method: 'POST',
-                            body: {'status': 'COMPLETED', ...body},
-                          ),
-                        )) {
-                      reload();
-                    }
-                  },
-                  child: Text(
-                    context.tr(
-                      'Submit report for review',
-                      'Nộp báo cáo chờ duyệt',
-                    ),
-                  ),
-                ),
             ],
           );
         },
