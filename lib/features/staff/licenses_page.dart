@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../shared/editor.dart';
+import '../../shared/files.dart';
 import '../../shared/external_link.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
@@ -148,7 +149,7 @@ class _LicensesPageState extends ConsumerState<LicensesPage> {
                         ),
                       OutlinedButton(
                         onPressed: () async {
-                          final files = await FilePicker.pickFiles(
+                          final files = await pickOneFile(
                             type: FileType.custom,
                             allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
                           );

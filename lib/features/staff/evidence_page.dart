@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../shared/editor.dart';
+import '../../shared/files.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import '../auth/session.dart';
@@ -79,7 +80,7 @@ class _EvidencePageState extends ConsumerState<EvidencePage> {
         ],
       );
       if (details == null || !mounted) return;
-      final files = await FilePicker.pickFiles(
+      final files = await pickOneFile(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'mp4'],
       );
