@@ -75,84 +75,29 @@ class ResultsPage extends ConsumerWidget {
                                     icon: const Icon(Icons.open_in_new),
                                   ),
                           ),
-                        if (review['canSubmitRevision'] == true &&
-                            item['canRequestRevision'] != false)
-                          OutlinedButton(
-                            onPressed: () async {
-                              final body = await editRecord(
-                                context,
-                                title: context.tr(
-                                  'Request revision',
-                                  'Yêu cầu chỉnh sửa',
-                                ),
-                                fields: const [
-                                  FieldSpec(
-                                    'reasonCode',
-                                    'Reason',
-                                    'Lý do',
-                                    kind: FieldKind.choice,
-                                    options: {
-                                      'MISSING_EVIDENCE':
-                                          'Missing evidence / Thiếu minh chứng',
-                                      'POOR_QUALITY':
-                                          'Poor quality / Chất lượng kém',
-                                      'WRONG_LOCATION':
-                                          'Wrong location / Sai vị trí',
-                                      'REQUIREMENT_NOT_MET':
-                                          'Requirement not met / Chưa đáp ứng',
-                                      'OTHER': 'Other / Khác',
-                                    },
-                                  ),
-                                  FieldSpec(
-                                    'note',
-                                    'Details',
-                                    'Chi tiết',
-                                    kind: FieldKind.multiline,
-                                  ),
-                                ],
-                              );
-                              if (body != null &&
-                                  context.mounted &&
-                                  await runAction(
-                                    context,
-                                    () => api.request(
-                                      '$path/result/revision-request',
-                                      method: 'POST',
-                                      body: {
-                                        'reviewRoundId':
-                                            review['reviewRoundId'],
-                                        'expectedRoundVersion':
-                                            review['roundVersion'],
-                                        'clientRequestId': newRequestId(),
-                                        'generalNote': body['note'],
-                                        'items': [
-                                          {
-                                            'roundItemId': item['roundItemId'],
-                                            ...body,
-                                            'roundEvidenceIds':
-                                                records(item['evidence'])
-                                                    .map(
-                                                      (e) =>
-                                                          e['roundEvidenceId'],
-                                                    )
-                                                    .toList(),
-                                          },
-                                        ],
-                                      },
-                                    ),
-                                  )) {
-                                reload();
-                              }
-                            },
-                            child: Text(
-                              context.tr(
-                                'Request revision',
-                                'Yêu cầu chỉnh sửa',
-                              ),
-                            ),
-                          ),
                       ],
                     ),
+                  ),
+                ),
+              if (review['canSubmitRevision'] == true &&
+                  items.any((item) => item['canRequestRevision'] != false))
+                OutlinedButton(
+                  onPressed: () async {
+                    final body = await collectRevision(context, review, items);
+                    if (body != null &&
+                        context.mounted &&
+                        await runAction(
+                          context,
+                          () => api.command(
+                            '$path/result/revision-request',
+                            body: body,
+                          ),
+                        )) {
+                      reload();
+                    }
+                  },
+                  child: Text(
+                    context.tr('Request revision', 'Yêu cầu chỉnh sửa'),
                   ),
                 ),
               if (review['canAcceptResult'] == true)
@@ -206,3 +151,109 @@ class ResultsPage extends ConsumerWidget {
     );
   }
 }
+
+Future<Json?> collectRevision(
+  BuildContext context,
+  Json review,
+  List<Json> items,
+) async {
+  final eligible = {
+    for (final item in items)
+      if (item['canRequestRevision'] != false && item['roundItemId'] is String)
+        item['roundItemId'] as String: item,
+  };
+  final selection = await editRecord(
+    context,
+    title: context.tr('Request revision', 'Yêu cầu chỉnh sửa'),
+    fields: [
+      FieldSpec(
+        'items',
+        'Checklist items to revise',
+        'Hạng mục cần chỉnh sửa',
+        kind: FieldKind.multiChoice,
+        options: eligible.map((id, item) => MapEntry(id, '${item['title']}')),
+      ),
+      const FieldSpec(
+        'generalNote',
+        'General note',
+        'Ghi chú chung',
+        kind: FieldKind.multiline,
+        required: false,
+      ),
+    ],
+    validate: (values) => validateRevisionNotes(context, values),
+  );
+  if (selection == null || !context.mounted) return null;
+  final selected = (selection['items'] as List).cast<String>();
+  final details = await editRecord(
+    context,
+    title: context.tr('Revision details', 'Chi tiết chỉnh sửa'),
+    fields: [
+      for (final id in selected) ...[
+        FieldSpec(
+          'reason:$id',
+          '${eligible[id]!['title']} — reason',
+          '${eligible[id]!['title']} — lý do',
+          kind: FieldKind.choice,
+          options: const {
+            'MISSING_EVIDENCE': 'Missing evidence / Thiếu minh chứng',
+            'POOR_QUALITY': 'Poor quality / Chất lượng kém',
+            'WRONG_LOCATION': 'Wrong location / Sai vị trí',
+            'REQUIREMENT_NOT_MET': 'Requirement not met / Chưa đáp ứng',
+            'OTHER': 'Other / Khác',
+          },
+        ),
+        FieldSpec(
+          'note:$id',
+          'Details',
+          'Chi tiết',
+          kind: FieldKind.multiline,
+          required: false,
+        ),
+        if (records(eligible[id]!['evidence'])
+            .any((e) => e['roundEvidenceId'] is String))
+          FieldSpec(
+            'evidence:$id',
+            'Related evidence',
+            'Minh chứng liên quan',
+            kind: FieldKind.multiChoice,
+            required: false,
+            options: {
+              for (final e in records(eligible[id]!['evidence']))
+                if (e['roundEvidenceId'] is String)
+                  e['roundEvidenceId'] as String: '${e['fileName']}',
+            },
+          ),
+      ],
+    ],
+    validate: (values) => validateRevisionNotes(context, values),
+  );
+  if (details == null) return null;
+  return {
+    'reviewRoundId': review['reviewRoundId'],
+    'expectedRoundVersion': review['roundVersion'],
+    'generalNote': selection['generalNote'] ?? '',
+    'items': [
+      for (final id in selected)
+        {
+          'roundItemId': id,
+          'reasonCode': details['reason:$id'],
+          'note': details['note:$id'] ?? '',
+          'roundEvidenceIds': details['evidence:$id'] ?? <String>[],
+        },
+    ],
+  };
+}
+
+String? validateRevisionNotes(BuildContext context, Json values) =>
+    values.entries.any(
+      (e) =>
+          (e.key == 'generalNote' || e.key.startsWith('note:')) &&
+          e.value is String &&
+          (e.value as String).length > 2000,
+    )
+    ? context.tr(
+        'Notes must be at most 2,000 characters.',
+        'Ghi chú tối đa 2.000 ký tự.',
+      )
+    : null;
