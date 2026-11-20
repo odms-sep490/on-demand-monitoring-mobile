@@ -10,6 +10,8 @@ import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import '../auth/session.dart';
 
+import 'faq_page.dart';
+
 class SupportPage extends ConsumerWidget {
   const SupportPage({super.key});
   @override
@@ -18,6 +20,15 @@ class SupportPage extends ConsumerWidget {
     return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Support tickets', 'Yêu cầu hỗ trợ')),
+        actions: [
+          if (user.role == AppRole.customer)
+            TextButton(
+              onPressed: () => Navigator.of(
+                context,
+              ).push<void>(MaterialPageRoute(builder: (_) => const FaqPage())),
+              child: const Text('FAQ'),
+            ),
+        ],
       ),
       body: RemoteView(
         load: () => api.request('/api/support-tickets'),
