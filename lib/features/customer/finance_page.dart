@@ -85,6 +85,10 @@ class _FinancePageState extends ConsumerState<FinancePage> {
                   'version': ('Quote version', 'Phiên bản báo giá'),
                   'status': ('Quote status', 'Trạng thái báo giá'),
                   'totalAmount': ('Total (VND)', 'Tổng tiền (VND)'),
+                  'finalOrderAmount': (
+                    'Final order amount (VND)',
+                    'Tổng giá trị đơn (VND)',
+                  ),
                   'expiresAt': ('Expires', 'Hết hạn'),
                   'managerNote': ('Note', 'Ghi chú'),
                 },
@@ -135,7 +139,7 @@ class _FinancePageState extends ConsumerState<FinancePage> {
               if (!widget.manager &&
                   invoice.isNotEmpty &&
                   ['ISSUED', 'PARTIALLY_PAID'].contains(invoice['status']) &&
-                  invoice['depositStatus'] != 'PAID' &&
+                  invoice['depositStatus'] != 'DEPOSIT_PAID' &&
                   (invoice['contractRequired'] != true ||
                       invoice['contractConfirmedAt'] != null))
                 FilledButton(
@@ -146,7 +150,9 @@ class _FinancePageState extends ConsumerState<FinancePage> {
                         ),
                   child: Text(context.tr('Pay deposit', 'Thanh toán cọc')),
                 ),
-              for (final milestone in records(object(data)['milestones']))
+              for (final milestone in records(
+                object(object(data)['milestones'])['milestones'],
+              ))
                 Card(
                   child: ListTile(
                     title: Text(

@@ -6,9 +6,42 @@ import '../features/customer/customer_pages.dart';
 import '../features/customer/media_page.dart';
 import '../features/support/support_pages.dart';
 import '../features/notifications/notifications_page.dart';
+import '../features/manager/manager_pages.dart';
+import '../features/missions/mission_detail.dart';
+import '../features/devices/device_pages.dart';
+import '../features/customer/order_detail.dart';
+import '../features/maintenance/maintenance_page.dart';
 import 'app.dart';
 
 List<RouteBase> featureRoutes() => [
+  GoRoute(
+    path: '/manager/maintenance',
+    builder: (_, _) => const MaintenancePage(),
+  ),
+  GoRoute(
+    path: '/manager/dashboard',
+    builder: (_, _) => const ManagerDashboardPage(),
+  ),
+  GoRoute(
+    path: '/manager/orders',
+    builder: (_, _) => const ManagerOrdersPage(),
+  ),
+  GoRoute(
+    path: '/manager/orders/:id',
+    builder: (_, state) =>
+        OrderDetailPage(id: state.pathParameters['id']!, manager: true),
+  ),
+  GoRoute(path: '/manager/missions', builder: (_, _) => const MissionsPage()),
+  GoRoute(
+    path: '/manager/missions/:id',
+    builder: (_, state) => MissionDetailPage(id: state.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: '/manager/schedule',
+    builder: (_, _) => const MissionsPage(schedule: true),
+  ),
+  GoRoute(path: '/manager/devices', builder: (_, _) => const DevicesPage()),
+
   GoRoute(path: '/support', builder: (_, _) => const SupportPage()),
   GoRoute(path: '/notifications', builder: (_, _) => const NotificationsPage()),
   GoRoute(
@@ -25,6 +58,49 @@ List<RouteBase> featureRoutes() => [
   ),
 ];
 List<MenuEntry> menuEntries() => [
+  const MenuEntry(
+    '/manager/maintenance',
+    'Maintenance',
+    'Bảo trì',
+    Icons.build_outlined,
+    {AppRole.manager},
+  ),
+  const MenuEntry(
+    '/manager/dashboard',
+    'Dashboard',
+    'Tổng quan',
+    Icons.dashboard_outlined,
+    {AppRole.manager},
+  ),
+  const MenuEntry(
+    '/manager/orders',
+    'Order queue',
+    'Danh sách đơn hàng',
+    Icons.assignment_outlined,
+    {AppRole.manager},
+  ),
+  const MenuEntry(
+    '/manager/missions',
+    'Missions',
+    'Nhiệm vụ',
+    Icons.work_outline,
+    {AppRole.manager},
+  ),
+  const MenuEntry(
+    '/manager/schedule',
+    'Schedule',
+    'Lịch nhiệm vụ',
+    Icons.calendar_month_outlined,
+    {AppRole.manager},
+  ),
+  const MenuEntry(
+    '/manager/devices',
+    'Devices',
+    'Thiết bị',
+    Icons.precision_manufacturing_outlined,
+    {AppRole.manager},
+  ),
+
   const MenuEntry('/support', 'Support', 'Hỗ trợ', Icons.support_agent, {
     AppRole.customer,
     AppRole.manager,
