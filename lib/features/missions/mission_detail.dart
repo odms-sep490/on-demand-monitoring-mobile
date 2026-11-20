@@ -429,52 +429,6 @@ class MissionDetailPage extends ConsumerWidget {
                     child: Text(context.tr('Reschedule', 'Đổi lịch')),
                   ),
               ],
-              if (!manager && permissions['canRespond'] == true) ...[
-                FilledButton(
-                  onPressed: () async {
-                    if (await runAction(
-                      context,
-                      () =>
-                          api.request('$path/accept-current', method: 'PATCH'),
-                    )) {
-                      reload();
-                    }
-                  },
-                  child: Text(context.tr('Accept assignment', 'Nhận nhiệm vụ')),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final body = await editRecord(
-                      context,
-                      title: context.tr(
-                        'Decline assignment',
-                        'Từ chối nhiệm vụ',
-                      ),
-                      fields: const [
-                        FieldSpec(
-                          'reason',
-                          'Reason',
-                          'Lý do',
-                          kind: FieldKind.multiline,
-                        ),
-                      ],
-                    );
-                    if (body != null &&
-                        context.mounted &&
-                        await runAction(
-                          context,
-                          () => api.request(
-                            '$path/reject-current',
-                            method: 'PATCH',
-                            body: body,
-                          ),
-                        )) {
-                      reload();
-                    }
-                  },
-                  child: Text(context.tr('Decline', 'Từ chối')),
-                ),
-              ],
               if (!manager) ...[
                 OutlinedButton(
                   onPressed: () =>
