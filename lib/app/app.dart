@@ -154,6 +154,37 @@ class HomePage extends ConsumerWidget {
     final entries = menuEntries()
         .where((entry) => entry.roles.contains(user.role))
         .toList();
+    final order = switch (user.role) {
+      AppRole.customer => [
+        '/customer/orders',
+        '/customer/live',
+        '/customer/media',
+        '/notifications',
+        '/support',
+      ],
+      AppRole.staff => [
+        '/staff/missions',
+        '/staff/availability',
+        '/staff/licenses',
+        '/staff/devices',
+        '/staff/maintenance',
+        '/notifications',
+        '/support',
+      ],
+      AppRole.manager => [
+        '/manager/dashboard',
+        '/manager/orders',
+        '/manager/missions',
+        '/manager/schedule',
+        '/manager/devices',
+        '/manager/maintenance',
+        '/notifications',
+        '/support',
+      ],
+    };
+    entries.sort(
+      (a, b) => order.indexOf(a.path).compareTo(order.indexOf(b.path)),
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('ODMS'),

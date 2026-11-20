@@ -10,6 +10,7 @@ import '../../shared/editor.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import 'order_detail.dart';
+import 'order_compliance.dart';
 
 class CustomerOrdersPage extends ConsumerWidget {
   const CustomerOrdersPage({super.key});
@@ -54,6 +55,18 @@ Future<Map<String, String>> lookup(
 };
 
 Future<bool> createOrder(BuildContext context, ApiClient api) async {
+  try {
+    return await _createOrder(context, api);
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
+    }
+    return false;
+  }
+}
+
+Future<bool> _createOrder(BuildContext context, ApiClient api) async {
   final service = await editRecord(
     context,
     title: context.tr('Choose service', 'Chọn dịch vụ'),
@@ -248,7 +261,10 @@ Future<bool> createOrder(BuildContext context, ApiClient api) async {
     MaterialPageRoute(builder: (_) => const AreaPicker()),
   );
   if (area == null || !context.mounted) return false;
+  final compliance = await collectOrderCompliance(context);
+  if (compliance == null || !context.mounted) return false;
   final body = {
+    ...compliance,
     ...service,
     ...details,
     ...area,

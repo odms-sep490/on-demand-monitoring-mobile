@@ -6,9 +6,11 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../shared/editor.dart';
+import '../../shared/files.dart';
 import '../../shared/external_link.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
+import 'cancellation_page.dart';
 
 class ContractPage extends ConsumerWidget {
   const ContractPage({super.key, required this.orderId, required this.manager});
@@ -27,6 +29,23 @@ class ContractPage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
+              if (manager && contract['status'] != 'CONFIRMED' ||
+                  contract['status'] == 'CANCELLED')
+                OutlinedButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          CancellationPage(orderId: orderId, manager: manager),
+                    ),
+                  ),
+                  child: Text(
+                    context.tr(
+                      'Cancellation and refund',
+                      'Hủy hợp đồng và hoàn tiền',
+                    ),
+                  ),
+                ),
               DetailFields(
                 data: contract,
                 fields: const {
@@ -57,7 +76,7 @@ class ContractPage extends ConsumerWidget {
                   ].contains(contract['status']))
                 FilledButton.icon(
                   onPressed: () async {
-                    final files = await FilePicker.pickFiles(
+                    final files = await pickOneFile(
                       type: FileType.custom,
                       allowedExtensions: ['pdf'],
                     );
@@ -109,7 +128,7 @@ class ContractPage extends ConsumerWidget {
                       ],
                     );
                     if (fields == null) return;
-                    final files = await FilePicker.pickFiles(
+                    final files = await pickOneFile(
                       type: FileType.custom,
                       allowedExtensions: ['pdf'],
                     );

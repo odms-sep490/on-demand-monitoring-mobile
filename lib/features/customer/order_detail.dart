@@ -7,6 +7,8 @@ import '../../shared/editor.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
 import 'finance_page.dart';
+import 'order_actions.dart';
+import 'checklist_editor.dart';
 import '../manager/pricing_page.dart';
 import '../manager/delivery_page.dart';
 import 'contract_page.dart';
@@ -81,6 +83,25 @@ class OrderDetailPage extends ConsumerWidget {
                   context.tr('Contract documents', 'Tài liệu hợp đồng'),
                 ),
               ),
+              OrderActions(order: order, manager: manager, reload: reload),
+              if (!manager && order['canEditChecklist'] == true)
+                OutlinedButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => CustomerChecklistEditor(order: order),
+                      ),
+                    );
+                    reload();
+                  },
+                  child: Text(
+                    context.tr(
+                      'Edit monitoring checklist',
+                      'Chỉnh sửa hạng mục giám sát',
+                    ),
+                  ),
+                ),
               if (manager) ...[
                 OutlinedButton(
                   onPressed: () => open(PricingPage(orderId: id)),
@@ -132,14 +153,16 @@ class OrderDetailPage extends ConsumerWidget {
                     child: Text(context.tr('Start review', 'Bắt đầu duyệt')),
                   ),
                 FilledButton(
-                  onPressed: () async {
-                    if (await runAction(
-                      context,
-                      () => api.request('$path/approve', method: 'POST'),
-                    )) {
-                      reload();
-                    }
-                  },
+                  onPressed: order['orderStatus'] != 'UNDER_REVIEW'
+                      ? null
+                      : () async {
+                          if (await runAction(
+                            context,
+                            () => api.request('$path/approve', method: 'POST'),
+                          )) {
+                            reload();
+                          }
+                        },
                   child: Text(context.tr('Approve order', 'Duyệt đơn hàng')),
                 ),
                 OutlinedButton(

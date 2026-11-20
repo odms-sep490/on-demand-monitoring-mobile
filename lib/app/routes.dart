@@ -15,9 +15,11 @@ import '../features/staff/availability_page.dart';
 import '../features/staff/checklist_page.dart';
 import '../features/staff/evidence_page.dart';
 import '../features/staff/licenses_page.dart';
+import '../features/customer/live_status_page.dart';
 import 'app.dart';
 
 List<RouteBase> featureRoutes() => [
+  GoRoute(path: '/customer/live', builder: (_, _) => const LiveStatusPage()),
   GoRoute(path: '/staff/licenses', builder: (_, _) => const LicensesPage()),
   GoRoute(
     path: '/staff/missions',
@@ -90,6 +92,13 @@ List<RouteBase> featureRoutes() => [
   ),
 ];
 List<MenuEntry> menuEntries() => [
+  const MenuEntry(
+    '/customer/live',
+    'Monitoring status',
+    'Tình trạng giám sát',
+    Icons.radar,
+    {AppRole.customer},
+  ),
   const MenuEntry(
     '/staff/licenses',
     'My qualifications',

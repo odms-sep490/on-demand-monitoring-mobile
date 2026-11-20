@@ -10,6 +10,7 @@ import '../../shared/widgets.dart';
 import '../auth/session.dart';
 import '../customer/customer_pages.dart' show lookup;
 import '../manager/review_page.dart';
+import '../manager/mission_actions.dart';
 import '../manager/manager_pages.dart' show ExecutionPlanPage;
 
 class MissionDetailPage extends ConsumerWidget {
@@ -120,6 +121,11 @@ class MissionDetailPage extends ConsumerWidget {
                   ),
                 ),
               if (manager) ...[
+                ManagerMissionActions(
+                  mission: mission,
+                  permissions: permissions,
+                  reload: reload,
+                ),
                 OutlinedButton(
                   onPressed: () => Navigator.push(
                     context,
@@ -139,8 +145,11 @@ class MissionDetailPage extends ConsumerWidget {
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute<void>(
-                      builder: (_) =>
-                          ExecutionPlanPage(orderId: '${mission['orderId']}'),
+                      builder: (_) => ExecutionPlanPage(
+                        orderId: '${mission['orderId']}',
+                        reworkCaseId:
+                            mission['resultRevisionCaseId'] as String?,
+                      ),
                     ),
                   ),
                   child: Text(
