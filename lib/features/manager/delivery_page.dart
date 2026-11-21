@@ -17,8 +17,9 @@ import '../../shared/widgets.dart';
 import '../customer/finance_page.dart' show optionalResource;
 
 class ManagerDeliveryPage extends ConsumerStatefulWidget {
-  const ManagerDeliveryPage({super.key, required this.orderId});
+  const ManagerDeliveryPage({super.key, required this.orderId, this.missionId});
   final String orderId;
+  final String? missionId;
   @override
   ConsumerState<ManagerDeliveryPage> createState() =>
       _ManagerDeliveryPageState();
@@ -33,16 +34,22 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
   Widget build(BuildContext context) {
     final api = ref.watch(apiProvider),
         path = '/api/manager/orders/${segment(widget.orderId)}';
+    String scoped(String resource) => widget.missionId == null
+        ? resource
+        : '$resource?missionId=${segment(widget.missionId!)}';
     return PortalScaffold(
       appBar: AppBar(
         title: Text(context.tr('Publish results', 'Bàn giao kết quả')),
       ),
       body: RemoteView(
         load: () async => {
-          'delivery': await api.request('$path/delivery/checklists'),
-          'release': await optionalResource(api, '$path/delivery'),
-          'draft': await optionalResource(api, '$path/delivery/draft'),
-          'case': await optionalResource(api, '$path/result-revision-case'),
+          'delivery': await api.request(scoped('$path/delivery/checklists')),
+          'release': await optionalResource(api, scoped('$path/delivery')),
+          'draft': await optionalResource(api, scoped('$path/delivery/draft')),
+          'case': await optionalResource(
+            api,
+            scoped('$path/result-revision-case'),
+          ),
         },
         builder: (context, value, reload) {
           final delivery = object(object(value)['delivery']),
@@ -268,7 +275,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                           final deleted = await runAction(
                             context,
                             () => api.request(
-                              '$path/delivery/draft',
+                              scoped('$path/delivery/draft'),
                               method: 'DELETE',
                               query: {'expectedDraftVersion': draft['version']},
                             ),
@@ -311,7 +318,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                         final saved = await runAction(
                           context,
                           () => api.request(
-                            '$path/delivery/draft',
+                            scoped('$path/delivery/draft'),
                             method: 'PUT',
                             body: {
                               'expectedDraftVersion': draft['version'] ?? 0,
@@ -360,7 +367,9 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                         );
                         if (confirmation == null || !context.mounted) return;
                         setState(() => publishing = true);
-                        final endpoint = '$path/delivery/checklists/publish';
+                        final endpoint = scoped(
+                          '$path/delivery/checklists/publish',
+                        );
                         final body = <String, dynamic>{
                           'expectedDeliveryVersion':
                               delivery['deliveryVersion'],
@@ -488,7 +497,7 @@ class _ManagerDeliveryPageState extends ConsumerState<ManagerDeliveryPage> {
                           final released = await runAction(
                             context,
                             () => api.request(
-                              '$path/delivery/release-originals',
+                              scoped('$path/delivery/release-originals'),
                               method: 'POST',
                             ),
                           );
