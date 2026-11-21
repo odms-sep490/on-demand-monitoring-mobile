@@ -1,3 +1,4 @@
+import '../manager/delivery_page.dart';
 import '../manager/mission_finance_page.dart';
 import '../../shared/portal_scaffold.dart';
 
@@ -517,6 +518,22 @@ class MissionDetailPage extends ConsumerWidget {
                     ),
                   ),
                 ),
+                if (mission['orderId'] is String &&
+                    mission['status'] == 'COMPLETED')
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.inventory_2_outlined),
+                    label: Text(
+                      context.tr('Mission delivery', 'Bàn giao nhiệm vụ'),
+                    ),
+                    onPressed: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute(
+                        builder: (_) => ManagerDeliveryPage(
+                          orderId: mission['orderId'] as String,
+                          missionId: id,
+                        ),
+                      ),
+                    ),
+                  ),
                 ManagerMissionActions(
                   mission: mission,
                   permissions: permissions,
