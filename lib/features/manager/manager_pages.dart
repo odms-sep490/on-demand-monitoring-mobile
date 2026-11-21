@@ -77,9 +77,7 @@ class MissionsPage extends ConsumerWidget {
           ? null
           : FloatingActionButton.extended(
               onPressed: () async {
-                if (await createMission(context, api) && context.mounted) {
-                  context.pop();
-                }
+                await createMission(context, api);
               },
               icon: const Icon(Icons.add),
               label: Text(context.tr('Create mission', 'Tạo nhiệm vụ')),
@@ -88,9 +86,13 @@ class MissionsPage extends ConsumerWidget {
   }
 }
 
-Future<bool> createMission(BuildContext context, ApiClient api) async {
+Future<bool> createMission(
+  BuildContext context,
+  ApiClient api, {
+  String? orderId,
+}) async {
   try {
-    return await _createMission(context, api);
+    return await _createMission(context, api, orderId: orderId);
   } catch (error) {
     if (context.mounted) {
       ScaffoldMessenger.of(context)
@@ -100,23 +102,32 @@ Future<bool> createMission(BuildContext context, ApiClient api) async {
   }
 }
 
-Future<bool> _createMission(BuildContext context, ApiClient api) async {
-  final selection = await editRecord(
-    context,
-    title: context.tr('Choose approved order', 'Chọn đơn đã duyệt'),
-    fields: [
-      FieldSpec(
-        'orderId',
-        'Order',
-        'Đơn hàng',
-        kind: FieldKind.choice,
-        loadOptions: () => lookup(api, '/api/orders/approved', label: 'title'),
-      ),
-    ],
-  );
+Future<bool> _createMission(
+  BuildContext context,
+  ApiClient api, {
+  String? orderId,
+}) async {
+  final selection = orderId != null
+      ? {'orderId': orderId}
+      : await editRecord(
+          context,
+          title: context.tr('Choose approved order', 'Chọn đơn đã duyệt'),
+          fields: [
+            FieldSpec(
+              'orderId',
+              'Order',
+              'Đơn hàng',
+              kind: FieldKind.choice,
+              loadOptions: () =>
+                  lookup(api, '/api/orders/approved', label: 'title'),
+            ),
+          ],
+        );
   if (selection == null || !context.mounted) return false;
   final id = segment('${selection['orderId']}');
   final order = object(await api.request('/api/orders/$id'));
+  final plan = object(await api.request('/api/orders/$id/execution-plan'));
+  final additional = plan['planStatus'] == 'FINALIZED';
   if (!context.mounted) return false;
   final body = await editRecord(
     context,
@@ -155,7 +166,11 @@ Future<bool> _createMission(BuildContext context, ApiClient api) async {
   if (body == null || !context.mounted) return false;
   return runAction(
     context,
-    () => api.request('/api/missions/$id', method: 'POST', body: body),
+    () => api.request(
+      '/api/missions/$id${additional ? '/additional' : ''}',
+      method: 'POST',
+      body: body,
+    ),
   );
 }
 
@@ -244,6 +259,17 @@ class ExecutionPlanPage extends ConsumerWidget {
                     }
                   },
                   child: Text(context.tr('Finalize plan', 'Chốt kế hoạch')),
+                ),
+              if (plan['planStatus'] == 'FINALIZED' && reworkCaseId == null)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: Text(context.tr('Add mission', 'Thêm nhiệm vụ')),
+                  onPressed: () async {
+                    if (await createMission(context, api, orderId: orderId) &&
+                        context.mounted) {
+                      reload();
+                    }
+                  },
                 ),
               if (plan['planStatus'] == 'FINALIZED')
                 OutlinedButton(
