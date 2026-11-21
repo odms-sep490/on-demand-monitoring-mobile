@@ -1,3 +1,4 @@
+import '../manager/mission_finance_page.dart';
 import '../../shared/portal_scaffold.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -505,6 +506,17 @@ class MissionDetailPage extends ConsumerWidget {
                               ),
                       ),
                     ),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.receipt_long_outlined),
+                  label: Text(
+                    context.tr('Mission finances', 'Tài chính nhiệm vụ'),
+                  ),
+                  onPressed: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => MissionFinancePage(missionId: id),
+                    ),
+                  ),
+                ),
                 ManagerMissionActions(
                   mission: mission,
                   permissions: permissions,
