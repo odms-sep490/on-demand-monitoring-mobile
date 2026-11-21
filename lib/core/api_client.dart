@@ -175,7 +175,9 @@ class ApiClient {
           errors: payload['errors'],
         );
       }
-      return payload['data'];
+      return payload.containsKey('data') || payload.containsKey('success')
+          ? payload['data']
+          : response.data;
     } on DioException catch (error) {
       if (generation != _generation) throw const ApiFailure('Session changed.');
       if (error.response?.statusCode == 401 && authenticated && retry) {
