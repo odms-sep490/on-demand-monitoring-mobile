@@ -41,7 +41,7 @@ Future<bool> createOrder(BuildContext context, ApiClient api) async {
 Future<bool> _createOrder(BuildContext context, ApiClient api) async {
   final service = await editRecord(
     context,
-    title: context.tr('Choose service', 'Chọn dịch vụ'),
+    title: context.tr('1. Service and purpose', '1. Dịch vụ & mục tiêu'),
     fields: [
       FieldSpec(
         'serviceId',
@@ -51,13 +51,6 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
         loadOptions: () =>
             lookup(api, '/api/services', query: {'activeOnly': true}),
       ),
-    ],
-  );
-  if (service == null || !context.mounted) return false;
-  final details = await editRecord(
-    context,
-    title: context.tr('Monitoring request', 'Yêu cầu giám sát'),
-    fields: [
       const FieldSpec('title', 'Title', 'Tiêu đề'),
       const FieldSpec(
         'description',
@@ -65,26 +58,6 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
         'Mô tả',
         kind: FieldKind.multiline,
         required: false,
-      ),
-      const FieldSpec('address', 'Site address', 'Địa chỉ giám sát'),
-      const FieldSpec(
-        'preferredDateFrom',
-        'Start date',
-        'Từ ngày',
-        kind: FieldKind.date,
-      ),
-      const FieldSpec(
-        'preferredDateTo',
-        'End date',
-        'Đến ngày',
-        kind: FieldKind.date,
-      ),
-      FieldSpec(
-        'preferredTimeId',
-        'Time slot',
-        'Khung giờ',
-        kind: FieldKind.choice,
-        loadOptions: () => lookup(api, '/api/preferred-times'),
       ),
       const FieldSpec(
         'flightPurpose',
@@ -102,6 +75,66 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
           'OTHER': 'Other / Khác',
         },
       ),
+    ],
+  );
+  if (service == null || !context.mounted) return false;
+  final location = await editRecord(
+    context,
+    title: context.tr('2. Monitoring location', '2. Vị trí & vùng giám sát'),
+    fields: [const FieldSpec('address', 'Site address', 'Địa chỉ giám sát')],
+  );
+  if (location == null || !context.mounted) return false;
+  final area = await Navigator.push<Json>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AreaPicker(initialAddress: location['address'] as String),
+    ),
+  );
+  if (area == null || !context.mounted) return false;
+  final templates = records(
+    await api.request(
+      '/api/services/${segment('${service['serviceId']}')}/checklists',
+    ),
+  );
+  if (!context.mounted) return false;
+  final selected = await Navigator.push<List<Json>>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CustomerChecklistEditor(
+        returnSelection: true,
+        order: {
+          'serviceId': service['serviceId'],
+          'checklistItems': templates
+              .where(
+                (e) =>
+                    e['serviceActive'] != false &&
+                    e['checklistActive'] != false,
+              )
+              .map(
+                (e) => {
+                  'sourceChecklistId': e['checklistId'],
+                  'sourceChecklistVersion': e['checklistVersion'],
+                  'content': e['content'],
+                  'required': e['required'] ?? false,
+                  'minimumEvidenceCount': e['minimumEvidenceCount'],
+                  'requiredEvidenceType': e['requiredEvidenceType'],
+                  'requestedImageCount': e['includedImageCount'] ?? 0,
+                  'requestedVideoCount': e['includedVideoCount'] ?? 0,
+                },
+              )
+              .toList(),
+        },
+      ),
+    ),
+  );
+  if (selected == null || !context.mounted) return false;
+  final site = await editRecord(
+    context,
+    title: context.tr(
+      '4. Site details and authority',
+      '4. Chi tiết & quyền giám sát',
+    ),
+    fields: [
       const FieldSpec(
         'estimatedLengthM',
         'Linear site length (m)',
@@ -158,18 +191,36 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
         'Tôi có quyền yêu cầu giám sát tại đây',
         kind: FieldKind.toggle,
       ),
+    ],
+  );
+  if (site == null || !context.mounted) return false;
+  final compliance = await collectOrderCompliance(
+    context,
+    includeDeliveryOptions: false,
+  );
+  if (compliance == null || !context.mounted) return false;
+  final schedule = await editRecord(
+    context,
+    title: context.tr('5. Schedule', '5. Thời gian'),
+    fields: [
+      const FieldSpec(
+        'preferredDateFrom',
+        'Start date',
+        'Từ ngày',
+        kind: FieldKind.date,
+      ),
+      const FieldSpec(
+        'preferredDateTo',
+        'End date',
+        'Đến ngày',
+        kind: FieldKind.date,
+      ),
       FieldSpec(
-        'deliverableIds',
-        'Requested outputs',
-        'Sản phẩm yêu cầu',
-        kind: FieldKind.multiChoice,
-        loadOptions: () => lookup(
-          api,
-          '/api/service-deliverables',
-          query: {'serviceId': service['serviceId']},
-          key: 'deliverableTypeId',
-          label: 'deliverableTypeName',
-        ),
+        'preferredTimeId',
+        'Time slot',
+        'Khung giờ',
+        kind: FieldKind.choice,
+        loadOptions: () => lookup(api, '/api/preferred-times'),
       ),
       const FieldSpec(
         'recurrenceType',
@@ -210,19 +261,6 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
         kind: FieldKind.date,
         required: false,
       ),
-      const FieldSpec(
-        'dataRetentionDays',
-        'Data retention (days)',
-        'Thời hạn lưu trữ (ngày)',
-        kind: FieldKind.choice,
-        options: {'30': '30', '90': '90', '180': '180', '365': '365'},
-      ),
-      const FieldSpec(
-        'termsAccepted',
-        'I accept the terms and data-security commitment',
-        'Tôi đồng ý điều khoản và cam kết bảo mật dữ liệu',
-        kind: FieldKind.toggle,
-      ),
     ],
     validate: (body) {
       if ('${body['preferredDateFrom']}'.compareTo(
@@ -252,53 +290,54 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
       return null;
     },
   );
-  if (details == null || !context.mounted) return false;
-  final area = await Navigator.push<Json>(
+  if (schedule == null || !context.mounted) return false;
+  final delivery = await editRecord(
     context,
-    MaterialPageRoute(builder: (_) => const AreaPicker()),
-  );
-  if (area == null || !context.mounted) return false;
-  final compliance = await collectOrderCompliance(context);
-  if (compliance == null || !context.mounted) return false;
-  final templates = records(
-    await api.request(
-      '/api/services/${segment('${service['serviceId']}')}/checklists',
+    title: context.tr(
+      '6. Deliverables and confirmation',
+      '6. Kết quả bàn giao & xác nhận',
     ),
-  );
-  if (!context.mounted) return false;
-  final selected = await Navigator.push<List<Json>>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => CustomerChecklistEditor(
-        returnSelection: true,
-        order: {
-          'serviceId': service['serviceId'],
-          'checklistItems': templates
-              .where(
-                (e) =>
-                    e['serviceActive'] != false &&
-                    e['checklistActive'] != false,
-              )
-              .map(
-                (e) => {
-                  'sourceChecklistId': e['checklistId'],
-                  'sourceChecklistVersion': e['checklistVersion'],
-                  'content': e['content'],
-                  'required': e['required'] ?? false,
-                  'minimumEvidenceCount': e['minimumEvidenceCount'],
-                  'requiredEvidenceType': e['requiredEvidenceType'],
-                  'requestedImageCount': e['includedImageCount'] ?? 0,
-                  'requestedVideoCount': e['includedVideoCount'] ?? 0,
-                },
-              )
-              .toList(),
-        },
+    fields: [
+      ...orderDeliveryFields,
+      FieldSpec(
+        'deliverableIds',
+        'Requested outputs',
+        'Sản phẩm yêu cầu',
+        kind: FieldKind.multiChoice,
+        loadOptions: () => lookup(
+          api,
+          '/api/service-deliverables',
+          query: {'serviceId': service['serviceId']},
+          key: 'deliverableTypeId',
+          label: 'deliverableTypeName',
+        ),
       ),
-    ),
+      const FieldSpec(
+        'dataRetentionDays',
+        'Data retention (days)',
+        'Thời hạn lưu trữ (ngày)',
+        kind: FieldKind.choice,
+        options: {'30': '30', '90': '90', '180': '180', '365': '365'},
+      ),
+      const FieldSpec(
+        'termsAccepted',
+        'I accept the terms and data-security commitment',
+        'Tôi đồng ý điều khoản và cam kết bảo mật dữ liệu',
+        kind: FieldKind.toggle,
+      ),
+    ],
   );
-  if (selected == null || !context.mounted) return false;
+  if (delivery == null || !context.mounted) return false;
+  final details = {
+    ...service,
+    ...location,
+    if (area['normalizedAddress'] case final String address) 'address': address,
+    ...site,
+    ...schedule,
+    ...delivery,
+  };
   final body = OrderDraft(
-    service: service,
+    service: {'serviceId': service['serviceId']},
     details: details,
     area: area,
     compliance: compliance,
