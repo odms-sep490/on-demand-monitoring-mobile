@@ -137,7 +137,11 @@ class _CustomerChecklistEditorState
   @override
   Widget build(BuildContext context) => PortalScaffold(
     appBar: AppBar(
-      title: Text(context.tr('Edit checklist', 'Chỉnh sửa hạng mục')),
+      title: Text(
+        widget.returnSelection
+            ? context.tr('3. Monitoring checklist', '3. Nội dung giám sát')
+            : context.tr('Edit checklist', 'Chỉnh sửa hạng mục'),
+      ),
     ),
     body: ListView(
       padding: const EdgeInsets.all(20),

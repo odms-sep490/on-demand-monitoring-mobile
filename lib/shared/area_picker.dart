@@ -32,14 +32,16 @@ Json polygonPayload(List<LatLng> input) {
 }
 
 class AreaPicker extends ConsumerStatefulWidget {
-  const AreaPicker({super.key});
+  const AreaPicker({super.key, this.initialAddress});
+  final String? initialAddress;
   @override
   ConsumerState<AreaPicker> createState() => _AreaPickerState();
 }
 
 class _AreaPickerState extends ConsumerState<AreaPicker> {
   final points = <LatLng>[], attachments = <Json>[];
-  final address = TextEditingController(), map = MapController();
+  late final address = TextEditingController(text: widget.initialAddress);
+  final map = MapController();
   String shape = 'POLYGON';
   LatLng? center;
   double radius = 250;
@@ -88,7 +90,7 @@ class _AreaPickerState extends ConsumerState<AreaPicker> {
       final lat = (result['latitude'] as num).toDouble(),
           lon = (result['longitude'] as num).toDouble();
       map.move(LatLng(lat, lon), 16);
-      setState(() => place = '${result['displayName']}');
+      setState(() => place = result['displayName'] as String?);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -196,6 +198,8 @@ class _AreaPickerState extends ConsumerState<AreaPicker> {
           .reduce(math.max);
       Navigator.pop(context, {
         'coverageArea': polygon,
+        if (place case final String label when label.trim().isNotEmpty)
+          'normalizedAddress': label,
         'latitude': chosen.latitude,
         'longitude': chosen.longitude,
         'radiusM': shape == 'CIRCLE' ? radius : coveringRadius,

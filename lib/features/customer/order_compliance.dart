@@ -6,12 +6,44 @@ import '../../shared/editor.dart';
 import '../../shared/files.dart';
 import '../../shared/strings.dart';
 
-Future<Json?> collectOrderCompliance(BuildContext context) async {
+const orderDeliveryFields = <FieldSpec>[
+  FieldSpec(
+    'resultFormats',
+    'Result formats',
+    'Định dạng kết quả',
+    kind: FieldKind.multiChoice,
+    initial: ['PHOTO'],
+    options: {
+      'PHOTO': 'Photos / Ảnh',
+      'VIDEO': 'Video',
+      'PDF_REPORT': 'PDF report / Báo cáo PDF',
+      'ORTHOMOSAIC': 'Orthomosaic / Ảnh trực giao',
+      'MODEL_3D': '3D model / Mô hình 3D',
+    },
+  ),
+  FieldSpec(
+    'deliveryMethods',
+    'Delivery methods',
+    'Phương thức nhận kết quả',
+    kind: FieldKind.multiChoice,
+    initial: ['DOWNLOAD'],
+    options: {
+      'DOWNLOAD': 'Download / Tải xuống',
+      'EMAIL': 'Email',
+      'API': 'API',
+    },
+  ),
+];
+
+Future<Json?> collectOrderCompliance(
+  BuildContext context, {
+  bool includeDeliveryOptions = true,
+}) async {
   final body = await editRecord(
     context,
     title: context.tr('Permit and authorization', 'Giấy phép và ủy quyền'),
-    fields: const [
-      FieldSpec(
+    fields: [
+      const FieldSpec(
         'permitStatus',
         'Airspace permit',
         'Giấy phép bay',
@@ -22,39 +54,14 @@ Future<Json?> collectOrderCompliance(BuildContext context) async {
           'NEED_SUPPORT': 'Request support / Cần hỗ trợ',
         },
       ),
-      FieldSpec(
+      const FieldSpec(
         'authorizationFile',
         'Attach a monitoring authorization document',
         'Đính kèm tài liệu ủy quyền giám sát',
         kind: FieldKind.toggle,
         required: false,
       ),
-      FieldSpec(
-        'resultFormats',
-        'Result formats',
-        'Định dạng kết quả',
-        kind: FieldKind.multiChoice,
-        initial: ['PHOTO'],
-        options: {
-          'PHOTO': 'Photos / Ảnh',
-          'VIDEO': 'Video',
-          'PDF_REPORT': 'PDF report / Báo cáo PDF',
-          'ORTHOMOSAIC': 'Orthomosaic / Ảnh trực giao',
-          'MODEL_3D': '3D model / Mô hình 3D',
-        },
-      ),
-      FieldSpec(
-        'deliveryMethods',
-        'Delivery methods',
-        'Phương thức nhận kết quả',
-        kind: FieldKind.multiChoice,
-        initial: ['DOWNLOAD'],
-        options: {
-          'DOWNLOAD': 'Download / Tải xuống',
-          'EMAIL': 'Email',
-          'API': 'API',
-        },
-      ),
+      if (includeDeliveryOptions) ...orderDeliveryFields,
     ],
   );
   if (body == null || !context.mounted) return null;
