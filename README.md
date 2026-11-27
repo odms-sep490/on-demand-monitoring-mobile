@@ -1,70 +1,124 @@
-# ODMS Mobile — Flutter / Dart
+# 📱 ODMS Mobile
 
-Ứng dụng Android và iOS cho **Customer và Staff**. Giao diện được thiết kế lại cho điện thoại, giữ nhận diện ODMS, font Be Vietnam Pro, nội dung và các luồng chính từ website. Không dùng WebView để bọc website.
+**Đặt yêu cầu giám sát, theo dõi tiến độ và xem kết quả trên điện thoại.**
 
-## Chạy ứng dụng
+ODMS Mobile là ứng dụng Flutter cho Android và iOS của **On-Demand Monitoring System**. App kết nối với backend ODMS và dùng chung dữ liệu nghiệp vụ với website.
 
-Yêu cầu Flutter **3.51.0-0.2.pre**, JDK 21 cho Android, và Xcode đầy đủ cho iOS.
+## ✨ Tính năng
 
-```sh
+| Vai trò | Có thể làm gì? |
+| --- | --- |
+| **Customer** | Tạo yêu cầu giám sát qua 6 bước, chọn vị trí và vùng giám sát trên bản đồ ở bước 2, theo dõi đơn, xem báo giá và kết quả, mở thư viện ảnh/video, dùng FAQ và gửi yêu cầu hỗ trợ. |
+| **Staff** | Xem nhiệm vụ được giao và thực hiện các thao tác CRUD được cấp quyền với hạng mục kiểm tra, minh chứng, lịch bận và các hồ sơ nghiệp vụ liên quan. |
+
+Trong thư viện Customer, mục **AI phân tích thay đổi** cho phép chọn hai ảnh, gửi yêu cầu và xem lịch sử phân tích. Backend cần worker xử lý ảnh để tạo kết quả mới. Staff không có chức năng điều khiển bay.
+
+## ⚡ Công nghệ
+
+| Thành phần | Công nghệ |
+| --- | --- |
+| Ứng dụng | Flutter 3.51.0-0.2.pre, Dart với SDK constraint `^3.14.0` |
+| Giao diện | Material UI, Be Vietnam Pro, giao diện sáng và tối, tiếng Việt và tiếng Anh |
+| Trạng thái và điều hướng | Riverpod, GoRouter |
+| Backend và phiên | Dio, Flutter Secure Storage, Cognito cho Google sign-in |
+| Bản đồ | flutter_map, latlong2 |
+
+## 🚀 Chạy trên máy phát triển
+
+### 1. Chuẩn bị
+
+Cài Flutter theo phiên bản ở trên, Android SDK và JDK 21 cho Android hoặc Xcode đầy đủ cho iOS. Khởi động backend ODMS và chuẩn bị tài khoản Customer hoặc Staff hợp lệ.
+
+### 2. Cấu hình backend
+
+```bash
 flutter pub get
 cp config/development.example.json config/development.json
+```
+
+Chỉnh `API_BASE_URL` trong `config/development.json`.
+
+| Thiết bị | Ví dụ URL |
+| --- | --- |
+| Android emulator | `http://10.0.2.2:8080` |
+| iOS Simulator | `http://localhost:8080` |
+| Điện thoại thật | URL backend mà thiết bị truy cập được, ví dụ `http://192.168.1.10:8080` |
+| Bản release | URL HTTPS của backend, theo mẫu [production.example.json](config/production.example.json) |
+
+Với backend HTTP chạy local, đặt `auth.refresh-token-cookie.secure=false` trong môi trường phát triển để cookie làm mới phiên hoạt động. Bản release dùng HTTPS và cookie Secure. Giữ cấu hình riêng, mật khẩu và khóa ký ngoài Git.
+
+Nếu dùng Google sign-in, điền `COGNITO_DOMAIN` và `COGNITO_CLIENT_ID` rồi đăng ký callback `odms://auth/callback` trong Cognito.
+
+### 3. Khởi động app
+
+```bash
+flutter devices
 flutter run --dart-define-from-file=config/development.json
 ```
 
-Chỉnh `API_BASE_URL` trong file cấu hình:
+Nếu Android cần đi qua ADB tới backend local ở cổng `18080`, dùng:
 
-- Android emulator: `http://10.0.2.2:8080`.
-- iOS simulator: `http://localhost:8080`.
-- Điện thoại thật: URL backend mà điện thoại truy cập được, không dùng `localhost` của máy tính.
-- Release: HTTPS. Các file cấu hình riêng, mật khẩu và khóa ký không được đưa vào Git.
-
-Có thể nối Android qua ADB khi backend chạy trên máy phát triển. Ví dụ với backend thử nghiệm ở cổng 18080:
-
-```sh
+```bash
 adb reverse tcp:18080 tcp:18080
 flutter run --dart-define=API_BASE_URL=http://127.0.0.1:18080
 ```
 
-Kiểm thử tích hợp dùng **database cô lập** vì có tạo đơn và thêm, sửa, xóa lịch bận. Cấu hình `ODMS_SMOKE_BASE_URL` và `ODMS_SMOKE_PASSWORD` trong môi trường chạy rồi gọi `flutter test test/live_order_smoke_test.dart`. Bài kiểm thử lịch bận tự dọn mục sau khi chạy.
+## 📂 Cấu trúc source
 
-Backend phải chạy và có tài khoản hợp lệ. Với backend HTTP ở môi trường phát triển, cấu hình `auth.refresh-token-cookie.secure=false` để cookie phiên có thể hoạt động; production giữ HTTPS và Secure cookie.
+Source được tổ chức theo tính năng. Mỗi trang tải hoặc nhận dữ liệu, ghép các component và điều hướng sang các màn liên quan.
 
-Google sign-in cần `COGNITO_DOMAIN`, `COGNITO_CLIENT_ID`, và callback `odms://auth/callback` được thêm vào Cognito. Thanh toán và dữ liệu media sử dụng dịch vụ hiện có của backend.
+| Thư mục | Trách nhiệm |
+| --- | --- |
+| `lib/app/` | Khởi tạo ứng dụng, khai báo route và theme |
+| `lib/core/` | API client, cấu hình, provider dùng chung, kiểu dữ liệu và chính sách quyền |
+| `lib/features/` | Các màn và component theo tính năng như Customer, Staff, xác thực, hồ sơ, thông báo và hỗ trợ |
+| `lib/shared/` | Widget, form, bản đồ và tiện ích dùng chung |
+| `assets/` | Logo, hình ảnh và font |
+| `config/` | Mẫu cấu hình kết nối backend |
+| `test/` | Unit test, widget test và smoke test backend |
 
-## Cấu trúc
+**Đặt code mới ở đâu?**
 
-```text
-lib/
-  app/       # Khởi tạo, router, theme
-  core/      # HTTP, phiên, cấu hình, phân quyền
-  shared/    # Điều hướng mobile, form, card, map, localization
-  features/  # Auth, customer, manager, staff, support, media...
-assets/      # Logo website và font có giấy phép
-config/      # Ví dụ cấu hình theo môi trường
-test/      # Unit và widget tests
-```
+- Component chỉ phục vụ một nghiệp vụ đặt cạnh trang trong `lib/features/<tính năng>/`. Ví dụ, chi tiết đơn Customer có file riêng cho tổng quan, bản đồ và báo cáo.
+- Widget thực sự dùng ở nhiều tính năng đặt trong `lib/shared/`.
+- Cấu hình môi trường, xử lý lỗi HTTP và chính sách quyền dùng chung đặt trong `lib/core/`. Quyền thực hiện thao tác vẫn do backend kiểm tra.
 
-Điều hướng dưới thay đổi theo vai trò. Staff không có kết nối drone, handover, preflight, điều khiển bay hoặc postflight. Các quyền nghiệp vụ vẫn do backend kiểm tra; app không tự mở quyền CRUD vượt quá website.
+## 🎨 Giao diện
 
-## Kiểm tra và build
+Dùng màu, kiểu chữ và khoảng cách từ theme ODMS. Giữ nội dung và thứ tự các bước nghiệp vụ đồng bộ với web. Khi sửa component, kiểm tra cả giao diện sáng và tối, tiếng Việt và tiếng Anh, cùng trạng thái đang tải, trống và lỗi trên màn hình điện thoại.
 
-```sh
+## 🧪 Kiểm tra và build
+
+```bash
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test --concurrency=1
+```
+
+Để chạy smoke test với backend, đặt `ODMS_SMOKE_BASE_URL` và `ODMS_SMOKE_PASSWORD` trong môi trường chạy. Dùng database thử nghiệm vì test tạo một đơn Customer và kiểm tra thêm, sửa, xóa lịch bận Staff. Test lịch bận tự dọn bản ghi sau khi chạy.
+
+```bash
+flutter test test/live_order_smoke_test.dart
+```
+
+Build thử cho Android và iOS:
+
+```bash
 flutter build apk --debug --target-platform android-arm64 --dart-define-from-file=config/development.json
 flutter build ios --no-codesign --dart-define-from-file=config/development.json
 ```
 
-Xuất ảnh kiểm tra UI bằng dữ liệu test:
+Xuất ảnh giao diện với dữ liệu kiểm thử vào `build/previews/`:
 
-```sh
+```bash
 flutter test test/redesign_test.dart --concurrency=1 --dart-define=EXPORT_PREVIEWS=true
 ```
 
-Ảnh nằm trong `build/previews/`. Đây là dữ liệu kiểm thử, không phải ảnh chụp một phiên backend thật.
+Xem thêm [tính năng và giới hạn](docs/features.md), [kiến trúc](docs/architecture.md) và [kết quả kiểm tra](docs/verification.md).
 
-Xem [các chức năng và giới hạn](docs/features.md), [kiến trúc](docs/architecture.md), và [kết quả kiểm tra](docs/verification.md).
+## 🛠️ Đóng góp
 
-Git chỉ làm việc local: nhánh `feat/*`, commit theo chức năng, merge vào `dev`. Không cấu hình remote hoặc push.
+1. Tạo nhánh từ `dev`, ví dụ `feat/customer-gallery`, `fix/staff-availability` hoặc `docs/update-readme`.
+2. Commit theo từng chức năng hoặc nhóm thay đổi. Dùng Conventional Commits, ví dụ `feat(customer): add gallery filters` hoặc `refactor(staff): extract mission filters`.
+3. Chạy formatter, analyzer và các test liên quan.
+4. Push nhánh và mở pull request vào `dev` để review. Nhánh `main` nhận bản đã được duyệt.
