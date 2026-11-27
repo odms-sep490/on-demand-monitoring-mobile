@@ -188,14 +188,14 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           if (role == AppRole.customer) {
-            expect(find.text('Tổng số đơn'), findsOneWidget);
+            expect(find.text('Đơn gần nhất'), findsOneWidget);
             expect(find.text('Tạo yêu cầu'), findsOneWidget);
           }
           if (role == AppRole.manager) {
             expect(find.text('Duyệt đơn hàng'), findsOneWidget);
           }
           if (role == AppRole.staff) {
-            expect(find.text('Chứng chỉ còn hiệu lực'), findsOneWidget);
+            expect(find.text('Nhiệm vụ được giao'), findsOneWidget);
             expect(find.text('Chờ phản hồi'), findsWidgets);
             expect(find.text('Điều khiển bay'), findsNothing);
           }
