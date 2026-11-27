@@ -1,93 +1,114 @@
-# 📱 ODMS Mobile
+# ODMS Mobile
 
-**Đặt yêu cầu giám sát, theo dõi tiến độ và xem kết quả trên điện thoại.**
+**Request monitoring, track progress, and review results from your phone.**
 
-ODMS Mobile là ứng dụng Flutter cho Android và iOS của **On-Demand Monitoring System**. App kết nối với backend ODMS và dùng chung dữ liệu nghiệp vụ với website.
+ODMS Mobile is the Flutter client for the **On-Demand Monitoring System**. It connects to the same ODMS backend as the web app and adapts Customer and Staff workflows for Android and iOS.
 
-## ✨ Tính năng
+## Features
 
-| Vai trò | Có thể làm gì? |
+| Role | Workflows |
 | --- | --- |
-| **Customer** | Tạo yêu cầu giám sát qua 6 bước, chọn vị trí và vùng giám sát trên bản đồ ở bước 2, theo dõi đơn, xem báo giá và kết quả, mở thư viện ảnh/video, dùng FAQ và gửi yêu cầu hỗ trợ. |
-| **Staff** | Xem nhiệm vụ được giao và thực hiện các thao tác CRUD được cấp quyền với hạng mục kiểm tra, minh chứng, lịch bận và các hồ sơ nghiệp vụ liên quan. |
+| **Customer** | Submit a monitoring request in six steps, select the coverage area on a map in step 2, track order progress, review quotes and delivered results, browse photos and videos, and get help through the FAQ and support. |
+| **Staff** | View assigned missions and maintain permitted records for checklists, evidence, availability, and related work. Flight controls are outside the mobile Staff workspace. |
 
-Trong thư viện Customer, mục **AI phân tích thay đổi** cho phép chọn hai ảnh, gửi yêu cầu và xem lịch sử phân tích. Backend cần worker xử lý ảnh để tạo kết quả mới. Staff không có chức năng điều khiển bay.
+**AI Change Analysis** is available in the Customer media library. Customers can select two images, submit an analysis request, and view job history. The backend image-processing worker must be configured to produce new results.
 
-## ⚡ Công nghệ
+## Tech Stack
 
-| Thành phần | Công nghệ |
+| Area | Technology |
 | --- | --- |
-| Ứng dụng | Flutter 3.51.0-0.2.pre, Dart với SDK constraint `^3.14.0` |
-| Giao diện | Material UI, Be Vietnam Pro, giao diện sáng và tối, tiếng Việt và tiếng Anh |
-| Trạng thái và điều hướng | Riverpod, GoRouter |
-| Backend và phiên | Dio, Flutter Secure Storage, Cognito cho Google sign-in |
-| Bản đồ | flutter_map, latlong2 |
+| App | Flutter 3.51.0-0.2.pre and Dart with SDK constraint `^3.14.0` |
+| UI | Material 3 widgets, Be Vietnam Pro, light and dark themes |
+| State and routing | Riverpod and GoRouter |
+| API and authentication | Dio, Flutter Secure Storage, and Cognito for Google sign-in |
+| Maps | flutter_map and latlong2 |
+| Tests | Dart unit tests, Flutter widget tests, and opt-in backend smoke tests |
 
-## 🚀 Chạy trên máy phát triển
+## Getting Started
 
-### 1. Chuẩn bị
+### 1. Prepare your environment
 
-Cài Flutter theo phiên bản ở trên, Android SDK và JDK 21 cho Android hoặc Xcode đầy đủ cho iOS. Khởi động backend ODMS và chuẩn bị tài khoản Customer hoặc Staff hợp lệ.
+Install the Flutter version listed above. For Android, install the Android SDK and JDK 21. For iOS, use macOS with Xcode. Start the ODMS backend and have a valid Customer or Staff account available.
 
-### 2. Cấu hình backend
+### 2. Configure the API
 
 ```bash
 flutter pub get
 cp config/development.example.json config/development.json
 ```
 
-Chỉnh `API_BASE_URL` trong `config/development.json`.
+Set `API_BASE_URL` in `config/development.json` for the device you are using.
 
-| Thiết bị | Ví dụ URL |
+| Target | Example |
 | --- | --- |
 | Android emulator | `http://10.0.2.2:8080` |
 | iOS Simulator | `http://localhost:8080` |
-| Điện thoại thật | URL backend mà thiết bị truy cập được, ví dụ `http://192.168.1.10:8080` |
-| Bản release | URL HTTPS của backend, theo mẫu [production.example.json](config/production.example.json) |
+| Physical device | An address reachable from the device, such as `http://192.168.1.10:8080` |
+| Release | An HTTPS endpoint, using the [production configuration template](config/production.example.json) |
 
-Với backend HTTP chạy local, đặt `auth.refresh-token-cookie.secure=false` trong môi trường phát triển để cookie làm mới phiên hoạt động. Bản release dùng HTTPS và cookie Secure. Giữ cấu hình riêng, mật khẩu và khóa ký ngoài Git.
+For local HTTP development, set `auth.refresh-token-cookie.secure=false` on the development backend so the refresh cookie can be used. Use HTTPS and secure cookies in production. Keep local configuration, credentials, and signing keys outside Git.
 
-Nếu dùng Google sign-in, điền `COGNITO_DOMAIN` và `COGNITO_CLIENT_ID` rồi đăng ký callback `odms://auth/callback` trong Cognito.
+For Google sign-in, set `COGNITO_DOMAIN` and `COGNITO_CLIENT_ID` and register the configured `OAUTH_REDIRECT_URI` in Cognito. The template uses `odms://auth/callback`.
 
-### 3. Khởi động app
+### 3. Run the app
 
 ```bash
 flutter devices
 flutter run --dart-define-from-file=config/development.json
 ```
 
-Nếu Android cần đi qua ADB tới backend local ở cổng `18080`, dùng:
+To reach a backend running on your computer at port `18080` from an ADB-connected Android device:
 
 ```bash
 adb reverse tcp:18080 tcp:18080
 flutter run --dart-define=API_BASE_URL=http://127.0.0.1:18080
 ```
 
-## 📂 Cấu trúc source
+## Project Structure
 
-Source được tổ chức theo tính năng. Mỗi trang tải hoặc nhận dữ liệu, ghép các component và điều hướng sang các màn liên quan.
-
-| Thư mục | Trách nhiệm |
+| Path | Responsibility |
 | --- | --- |
-| `lib/app/` | Khởi tạo ứng dụng, khai báo route và theme |
-| `lib/core/` | API client, cấu hình, provider dùng chung, kiểu dữ liệu và chính sách quyền |
-| `lib/features/` | Các màn và component theo tính năng như Customer, Staff, xác thực, hồ sơ, thông báo và hỗ trợ |
-| `lib/shared/` | Widget, form, bản đồ và tiện ích dùng chung |
-| `assets/` | Logo, hình ảnh và font |
-| `config/` | Mẫu cấu hình kết nối backend |
-| `test/` | Unit test, widget test và smoke test backend |
+| `lib/app/` | Application setup, routes, and theme |
+| `lib/core/` | API client, configuration, common providers, models, and mobile role policies |
+| `lib/features/` | Screens, components, and workflows grouped by feature |
+| `lib/shared/` | Reusable controls, forms, map widgets, navigation, and localization helpers |
+| `assets/` | Product imagery, logos, and fonts |
+| `config/` | Example development and release configuration |
+| `test/` | Unit tests, widget tests, and backend smoke tests |
 
-**Đặt code mới ở đâu?**
+Keep screen entry points focused on loading data, composing components, and navigation. Put feature-specific widgets next to the screen that uses them. For example, [Customer order details](lib/features/customer/order_detail.dart) delegates the order workspace, summary, coverage map, and reports to separate files. Put widgets used by several domains in `lib/shared/` and shared network or permission policy in `lib/core/`.
 
-- Component chỉ phục vụ một nghiệp vụ đặt cạnh trang trong `lib/features/<tính năng>/`. Ví dụ, chi tiết đơn Customer có file riêng cho tổng quan, bản đồ và báo cáo.
-- Widget thực sự dùng ở nhiều tính năng đặt trong `lib/shared/`.
-- Cấu hình môi trường, xử lý lỗi HTTP và chính sách quyền dùng chung đặt trong `lib/core/`. Quyền thực hiện thao tác vẫn do backend kiểm tra.
+## Design Guide
 
-## 🎨 Giao diện
+ODMS uses a blue accent, restrained borders, clean typography, and imagery tied to the monitoring service or task. Start with the [app theme](lib/app/theme.dart) and [shared UI components](lib/shared/mobile_ui.dart) when building a page.
 
-Dùng màu, kiểu chữ và khoảng cách từ theme ODMS. Giữ nội dung và thứ tự các bước nghiệp vụ đồng bộ với web. Khi sửa component, kiểm tra cả giao diện sáng và tối, tiếng Việt và tiếng Anh, cùng trạng thái đang tải, trống và lỗi trên màn hình điện thoại.
+### Color and type
 
-## 🧪 Kiểm tra và build
+| Token | Light theme | Dark theme | Use |
+| --- | --- | --- | --- |
+| Primary | `#1565E8` | `#1565E8` | Primary actions, focus, and selected navigation |
+| Canvas | `#F4F7FC` | `#0B1226` | Screen background |
+| Surface | `#FFFFFF` | `#111B36` | Cards, inputs, and navigation |
+| Text | `#0F1B3D` | `#E6ECFA` | Headings and primary content |
+| Secondary text | `#64748B` | `#93A1C0` | Supporting text and metadata |
+| Border | `#E6ECF5` | `#1F2C4D` | Dividers and outlines |
+
+Use the Be Vietnam Pro styles from `Theme.of(context).textTheme`. Screen headlines use 21 to 28 logical pixels and bold weight. Body styles use 12 to 14 logical pixels. Read colors from the theme so components adapt to both modes.
+
+### Layout and interaction
+
+| Element | Pattern |
+| --- | --- |
+| Page hierarchy | Lead with the current task, the primary action, and the status. Group supporting information below it. |
+| Cards and spacing | Use `SectionCard` for related information. Its default padding and corner radius are 16 logical pixels. Use a flat list where rows belong to the same group. |
+| Actions and forms | Use a filled button for the primary action and outlined buttons for secondary actions. Theme buttons and inputs use 12-pixel corners. Keep form labels visible and place validation feedback by the corresponding field. |
+| Maps and media | Show the selected coverage and the order's own images when available. Keep map attribution visible and show a clear placeholder when media is unavailable. |
+| Status and feedback | Pair status color with a readable label. Include loading, empty, and retry states on screens that fetch data. |
+| Motion | Use short transitions to show a change in state. Order detail tabs use a 180 ms transition and respect the system's reduced-motion preference. |
+
+Keep the six-step request flow aligned with the web workflow, with the map in step 2. Check new screens at phone width in both themes and in both supported app languages, English and Vietnamese.
+
+## Verification and Builds
 
 ```bash
 dart format --output=none --set-exit-if-changed lib test
@@ -95,74 +116,66 @@ flutter analyze
 flutter test --concurrency=1
 ```
 
-Để chạy smoke test với backend, đặt `ODMS_SMOKE_BASE_URL` và `ODMS_SMOKE_PASSWORD` trong môi trường chạy. Dùng database thử nghiệm vì test tạo một đơn Customer và kiểm tra thêm, sửa, xóa lịch bận Staff. Test lịch bận tự dọn bản ghi sau khi chạy.
+For smoke tests, set `ODMS_SMOKE_BASE_URL` and `ODMS_SMOKE_PASSWORD` in your environment. Use an isolated test database because the suite creates a Customer order and exercises Staff availability CRUD. The Staff smoke test removes its temporary availability entry.
 
 ```bash
 flutter test test/live_order_smoke_test.dart
 ```
 
-Build thử cho Android và iOS:
+Build an Android debug APK or an unsigned iOS build:
 
 ```bash
 flutter build apk --debug --target-platform android-arm64 --dart-define-from-file=config/development.json
 flutter build ios --no-codesign --dart-define-from-file=config/development.json
 ```
 
-Xuất ảnh giao diện với dữ liệu kiểm thử vào `build/previews/`:
+To export UI previews with test fixtures into `build/previews/`:
 
 ```bash
 flutter test test/redesign_test.dart --concurrency=1 --dart-define=EXPORT_PREVIEWS=true
 ```
 
-Xem thêm [tính năng và giới hạn](docs/features.md), [kiến trúc](docs/architecture.md) và [kết quả kiểm tra](docs/verification.md).
+See [Feature coverage](docs/features.md), [Architecture](docs/architecture.md), and [Verification notes](docs/verification.md) for more detail.
 
-## 🛠️ Workflow & Contributing / Quy trình đóng góp
+## Workflow and Contributing
 
-### 🌳 Branch naming / Đặt tên nhánh
+### Branch naming
 
-Create a branch from the latest `dev` and name it `type/description-slug`. Use lowercase English and separate words with hyphens.
+Start from the latest `dev` and use `type/description-slug`. Write the slug in lowercase English with hyphens between words.
 
-Tạo nhánh từ `dev` mới nhất theo mẫu `type/mo-ta-ngan`. Dùng tiếng Anh viết thường và phân cách các từ bằng dấu gạch nối.
-
-| Type / Loại | When to use (EN) | Khi nào dùng (VI) | Example / Ví dụ |
-| --- | --- | --- | --- |
-| `feat` | Add a user-facing feature | Thêm tính năng cho người dùng | `feat/customer-gallery-filters` |
-| `fix` | Correct an existing bug | Sửa lỗi đang xảy ra | `fix/staff-availability-validation` |
-| `design` | Update visual styling or interaction | Chỉnh giao diện, bố cục hoặc hiệu ứng tương tác | `design/order-detail-header` |
-| `refactor` | Improve code structure while preserving behavior | Sắp xếp lại code và giữ nguyên hành vi | `refactor/split-mission-components` |
-| `chore` | Maintain dependencies, tooling or build config | Bảo trì thư viện, công cụ hoặc cấu hình build | `chore/update-flutter-sdk` |
-| `docs` | Update project documentation | Cập nhật tài liệu dự án | `docs/update-mobile-readme` |
-| `test` | Add or improve automated tests | Thêm hoặc cải thiện kiểm thử tự động | `test/customer-order-flow` |
-
-### 💬 Commit messages / Đặt tên commit
-
-Use `type(scope): description` for feature-specific changes and `type: description` for project-wide changes. Write the description in lowercase English, start it with a verb, and omit the final period. Keep each commit focused on one feature or one related change.
-
-Dùng `type(scope): description` cho thay đổi theo tính năng và `type: description` cho thay đổi cấp dự án. Viết mô tả bằng tiếng Anh thường, bắt đầu bằng động từ và bỏ dấu chấm cuối câu. Mỗi commit nên gom thay đổi của một tính năng hoặc một nhóm công việc liên quan.
-
-| Scope / Phạm vi | Example / Ví dụ | Meaning / Ý nghĩa |
+| Type | Use | Example |
 | --- | --- | --- |
-| Customer | `feat(customer): add gallery filters` | Thêm bộ lọc thư viện |
-| Staff | `fix(staff): validate availability dates` | Sửa kiểm tra ngày trong lịch bận |
-| Shared UI | `refactor(ui): extract order status badge` | Tách component trạng thái đơn |
-| Project / Toàn dự án | `chore: update flutter sdk` | Cập nhật Flutter SDK |
+| `feat` | Add a user-facing capability | `feat/customer-gallery-filters` |
+| `fix` | Correct a bug | `fix/staff-availability-validation` |
+| `design` | Update layout, styling, or interaction | `design/order-detail-header` |
+| `refactor` | Restructure code while preserving behavior | `refactor/split-mission-components` |
+| `chore` | Maintain tooling, dependencies, or build configuration | `chore/update-flutter-sdk` |
+| `docs` | Update documentation | `docs/update-mobile-readme` |
+| `test` | Add or improve automated coverage | `test/customer-order-flow` |
 
-### 🚀 Pull requests / Quy trình mở PR
+### Commit messages
 
-| Step / Bước | English | Tiếng Việt |
-| --- | --- | --- |
-| 1. Branch | Sync your local `dev`, then create a feature branch. | Đồng bộ `dev` local rồi tạo nhánh cho công việc. |
-| 2. Verify | Run the formatter, analyzer and relevant tests. | Chạy formatter, analyzer và các test liên quan. |
-| 3. Commit and push | Commit by feature and push your working branch. | Commit theo từng chức năng rồi push nhánh đang làm. |
-| 4. Open a PR | Target `dev`. Summarize the changes, include verification results and attach screenshots for UI changes. | Mở PR vào `dev`. Ghi rõ nội dung thay đổi, kết quả kiểm thử và đính kèm ảnh nếu sửa giao diện. |
-| 5. Review and merge | Request review and merge approved changes into `dev`. Promote reviewed versions to `main`. | Nhờ review rồi merge phần đã duyệt vào `dev`. Đưa bản đã duyệt lên `main`. |
+Use `type(scope): description` for feature changes or `type: description` for project-wide changes. Start the lowercase description with an imperative verb, omit the final period, and keep the commit focused on one feature or related change.
 
-Example / Ví dụ:
+```text
+feat(customer): add gallery filters
+fix(staff): validate availability dates
+refactor(ui): extract order status badge
+chore: update flutter sdk
+```
+
+### Pull requests
+
+1. Create a working branch from the latest `dev`.
+2. Run the formatter, analyzer, and relevant tests. Check UI changes on a phone or emulator.
+3. Commit changes by feature and push the working branch.
+4. Open a PR targeting `dev`. Explain the change, list the checks you ran, and attach screenshots for UI changes.
+5. Request review and merge approved changes into `dev`. Promote reviewed versions to `main`.
 
 ```bash
 git switch dev
 git switch -c feat/customer-gallery-filters
-# After editing and testing / Sau khi sửa và kiểm thử
+# After editing and verification
 git add lib/features/customer/
 git commit -m "feat(customer): add gallery filters"
 git push -u origin feat/customer-gallery-filters
