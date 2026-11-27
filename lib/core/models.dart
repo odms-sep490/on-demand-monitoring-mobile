@@ -9,7 +9,6 @@ enum AppRole { customer, staff, manager }
 AppRole parseRole(String value) => switch (value) {
   'CUSTOMER' => AppRole.customer,
   'STAFF' => AppRole.staff,
-  'MANAGER' => AppRole.manager,
   _ => throw const FormatException(
     'This account role is not supported on mobile.',
   ),

@@ -1,6 +1,7 @@
 import 'models.dart';
 
 bool mayOpenMobilePath(AppRole role, String path) {
+  if (role == AppRole.manager) return false;
   if (['/home', '/profile', '/support', '/notifications'].contains(path)) {
     return true;
   }

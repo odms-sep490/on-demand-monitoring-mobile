@@ -54,6 +54,7 @@ ResponseBody response(
 void main() {
   test('unsupported roles cannot enter the mobile app', () {
     expect(() => parseRole('ADMIN'), throwsFormatException);
+    expect(() => parseRole('MANAGER'), throwsFormatException);
     expect(parseRole('STAFF'), AppRole.staff);
   });
   test('unwraps API envelopes and preserves validation errors', () async {
