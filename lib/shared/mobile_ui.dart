@@ -319,24 +319,31 @@ class DomainCard extends StatelessWidget {
     required this.item,
     this.onTap,
     this.showCustomer = false,
+    this.standalone = true,
   });
   final Json item;
   final VoidCallback? onTap;
-  final bool showCustomer;
+  final bool showCustomer, standalone;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: EdgeInsets.only(bottom: standalone ? 12 : 0),
     child: Material(
-      color: Theme.of(context).colorScheme.surface,
+      color: standalone
+          ? Theme.of(context).colorScheme.surface
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: standalone
+              ? const EdgeInsets.all(16)
+              : const EdgeInsets.symmetric(vertical: 13, horizontal: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).dividerColor),
+            border: standalone
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -102,15 +102,51 @@ class _AvailabilityPageState extends ConsumerState<AvailabilityPage> {
                 return ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    Text('${schedule['weekStart']} – ${schedule['weekEnd']}'),
-                    const SizedBox(height: 12),
-                    Text(
-                      context.tr(
-                        '${schedule['remainingSessions']} busy sessions remaining this week',
-                        'Còn ${schedule['remainingSessions']} buổi đăng ký bận trong tuần',
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF152955), Color(0xFF494292)],
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.date_range_outlined,
+                            color: Color(0xFFCCDAFF),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            context.tr('This week', 'Lịch trong tuần'),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(color: Colors.white),
+                          ),
+                          if (schedule['weekStart'] != null &&
+                              schedule['weekEnd'] != null)
+                            Text(
+                              '${schedule['weekStart']} – ${schedule['weekEnd']}',
+                              style: const TextStyle(color: Color(0xFFE1EAFF)),
+                            ),
+                          if (schedule['remainingSessions']
+                              case final num remaining)
+                            Text(
+                              context.tr(
+                                '$remaining sessions remaining',
+                                'Còn $remaining buổi đăng ký bận',
+                              ),
+                              style: const TextStyle(color: Color(0xFFE1EAFF)),
+                            ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
+                    Text(
+                      context.tr('Registered sessions', 'Các buổi đã đăng ký'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const Divider(),
                     for (final session in records(schedule['items']))
                       Card(
                         child: ListTile(

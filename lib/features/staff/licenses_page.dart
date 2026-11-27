@@ -114,10 +114,25 @@ class _LicensesPageState extends ConsumerState<LicensesPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.verified_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${item['licenseName'] ?? context.tr('Qualification', 'Chứng chỉ')}',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                       DetailFields(
                         data: item,
                         fields: const {
-                          'licenseName': ('Qualification', 'Chứng chỉ'),
                           'licenseNumber': ('License number', 'Số chứng chỉ'),
                           'issuingAuthority': (
                             'Issuing authority',

@@ -24,18 +24,50 @@ class ProfilePage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              const CircleAvatar(
-                radius: 40,
-                child: Icon(Icons.person_outline, size: 40),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF102D57), Color(0xFF176481)],
+                  ),
+                ),
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 24,
+                      child: Icon(Icons.person_outline),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${profile['fullName'] ?? ref.watch(sessionProvider).user?.fullName ?? ''}',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(color: Colors.white),
+                          ),
+                          if (profile['email'] != null)
+                            Text(
+                              '${profile['email']}',
+                              style: const TextStyle(color: Color(0xFFE0F3FF)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              Text(
+                context.tr('Contact information', 'Thông tin liên hệ'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const Divider(),
               DetailFields(
                 data: profile,
-                fields: const {
-                  'fullName': ('Full name', 'Họ và tên'),
-                  'email': ('Email', 'Email'),
-                  'phoneNumber': ('Phone', 'Điện thoại'),
-                },
+                fields: const {'phoneNumber': ('Phone', 'Điện thoại')},
               ),
               DetailFields(
                 data: object(profile['customerProfile']),

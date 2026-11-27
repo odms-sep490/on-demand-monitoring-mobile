@@ -19,7 +19,7 @@ class StaffMissionsPage extends ConsumerStatefulWidget {
 }
 
 class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
-  int tab = 0;
+  int tab = 1;
   DateTime? selectedDate;
   String query = '';
   @override

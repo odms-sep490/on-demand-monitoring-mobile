@@ -87,23 +87,46 @@ class _RecordListState extends State<RecordList> {
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async => widget.refresh(),
-            child: ListView.builder(
+            child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
               itemCount: items.isEmpty ? 1 : items.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 if (items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(48),
-                    child: Text(
-                      context.tr('No records found.', 'Chưa có dữ liệu.'),
-                      textAlign: TextAlign.center,
+                  final theme = Theme.of(context);
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 48,
+                        horizontal: 20,
+                      ),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor:
+                                theme.colorScheme.secondaryContainer,
+                            child: Icon(
+                              Icons.inbox_outlined,
+                              color: theme.colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            context.tr('No records found.', 'Chưa có dữ liệu.'),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
                 final item = items[index];
                 return DomainCard(
                   item: item,
+                  standalone: false,
                   onTap: widget.onTap == null
                       ? null
                       : () => widget.onTap!(item),

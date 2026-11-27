@@ -1,3 +1,5 @@
+import '../../shared/mobile_ui.dart';
+import '../../shared/workspace_hero.dart';
 import '../../shared/portal_scaffold.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -119,6 +121,25 @@ class DevicePage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
+              WorkspaceHero(
+                title: recordTitle(item),
+                eyebrow: item['code'] as String?,
+                description: item['modelName'] as String? ?? '',
+                action: recordStatus(item).isEmpty
+                    ? const SizedBox.shrink()
+                    : DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: StatusPill(status: recordStatus(item)),
+                      ),
+              ),
+              Text(
+                context.tr('Device information', 'Thông số thiết bị'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const Divider(),
               DetailFields(
                 data: item,
                 fields: const {

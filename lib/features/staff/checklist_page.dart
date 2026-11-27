@@ -38,6 +38,26 @@ class ChecklistPage extends ConsumerWidget {
                   'blockingReasons': ('Needs resolution', 'Cần xử lý'),
                 },
               ),
+              Row(
+                children: [
+                  Icon(
+                    Icons.fact_check_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      context.tr(
+                        'Monitoring requirements',
+                        'Hạng mục giám sát',
+                      ),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  Text('${records(checklist['executions']).length}'),
+                ],
+              ),
+              const Divider(),
               for (final item in records(checklist['executions']))
                 Card(
                   child: Padding(
