@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/models.dart';
+import '../../core/api_client.dart';
 import '../../core/providers.dart';
 import '../../shared/editor.dart';
 import '../../shared/portal_scaffold.dart';
@@ -93,17 +94,31 @@ class _ChangeAnalysisPageState extends ConsumerState<ChangeAnalysisPage> {
                       }
                       pendingPair = pair;
                       setState(() => submitting = true);
-                      final saved = await runAction(
-                        context,
-                        () => api.request(
-                          path,
-                          method: 'POST',
-                          body: FormData.fromMap({
-                            ...pair,
-                            'requestKey': requestKey ??= newRequestId(),
-                          }),
-                        ),
-                      );
+                      final saved = await runAction(context, () async {
+                        final unavailable = context.tr(
+                          'The image analysis service is not ready. Try again later.',
+                          'Dịch vụ phân tích ảnh chưa sẵn sàng. Vui lòng thử lại sau.',
+                        );
+                        try {
+                          return await api.request(
+                            path,
+                            method: 'POST',
+                            body: FormData.fromMap({
+                              ...pair,
+                              'requestKey': requestKey ??= newRequestId(),
+                            }),
+                          );
+                        } on ApiFailure catch (failure) {
+                          if (failure.status == 503) {
+                            throw ApiFailure(
+                              unavailable,
+                              code: failure.code,
+                              status: failure.status,
+                            );
+                          }
+                          rethrow;
+                        }
+                      });
                       if (!mounted) return;
                       setState(() => submitting = false);
                       if (saved) {
