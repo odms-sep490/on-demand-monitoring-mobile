@@ -572,6 +572,8 @@ class _CustomerOrderWorkspaceState extends State<_CustomerOrderWorkspace> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _OrderCoverageMap(order: order),
+          _OrderProgress(status: recordStatus(order)),
+          OrderActions(order: order, manager: false, reload: widget.reload),
           Text(
             context.tr('Order information', 'Thông tin đơn hàng'),
             style: Theme.of(context).textTheme.titleLarge,
@@ -676,8 +678,6 @@ class _CustomerOrderWorkspaceState extends State<_CustomerOrderWorkspace> {
       children: [
         _CustomerOrderHeader(order: order),
         const SizedBox(height: 12),
-        _OrderProgress(status: recordStatus(order)),
-        OrderActions(order: order, manager: false, reload: widget.reload),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
