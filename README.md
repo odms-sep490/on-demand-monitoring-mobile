@@ -1,10 +1,12 @@
-# ODMS Mobile
+<img src="assets/images/logo.png" alt="ODMS logo" width="96">
+
+# 📱 ODMS Mobile
 
 **Request monitoring, track progress, and review results from your phone.**
 
 ODMS Mobile is the Flutter client for the **On-Demand Monitoring System**. It connects to the same ODMS backend as the web app and adapts Customer and Staff workflows for Android and iOS.
 
-## Features
+## ✨ Features
 
 | Role | Workflows |
 | --- | --- |
@@ -13,7 +15,7 @@ ODMS Mobile is the Flutter client for the **On-Demand Monitoring System**. It co
 
 **AI Change Analysis** is available in the Customer media library. Customers can select two images, submit an analysis request, and view job history. The backend image-processing worker must be configured to produce new results.
 
-## Tech Stack
+## ⚡ Tech Stack
 
 | Area | Technology |
 | --- | --- |
@@ -24,7 +26,7 @@ ODMS Mobile is the Flutter client for the **On-Demand Monitoring System**. It co
 | Maps | flutter_map and latlong2 |
 | Tests | Dart unit tests, Flutter widget tests, and opt-in backend smoke tests |
 
-## Getting Started
+## 🚀 Getting Started
 
 ### 1. Prepare your environment
 
@@ -64,7 +66,7 @@ adb reverse tcp:18080 tcp:18080
 flutter run --dart-define=API_BASE_URL=http://127.0.0.1:18080
 ```
 
-## Project Structure
+## 📂 Project Structure
 
 | Path | Responsibility |
 | --- | --- |
@@ -78,7 +80,9 @@ flutter run --dart-define=API_BASE_URL=http://127.0.0.1:18080
 
 Keep screen entry points focused on loading data, composing components, and navigation. Put feature-specific widgets next to the screen that uses them. For example, [Customer order details](lib/features/customer/order_detail.dart) delegates the order workspace, summary, coverage map, and reports to separate files. Put widgets used by several domains in `lib/shared/` and shared network or permission policy in `lib/core/`.
 
-## Design Guide
+<a name="design-guide"></a>
+
+## 🎨 Design Guide
 
 ODMS uses a blue accent, restrained borders, clean typography, and imagery tied to the monitoring service or task. Start with the [app theme](lib/app/theme.dart) and [shared UI components](lib/shared/mobile_ui.dart) when building a page.
 
@@ -110,7 +114,7 @@ Use the Be Vietnam Pro styles from `Theme.of(context).textTheme`. Screen headlin
 
 Keep the six-step request flow aligned with the web workflow, with the map in step 2. Check new screens at phone width in both themes and in both supported app languages, English and Vietnamese.
 
-## Verification and Builds
+## 🧪 Verification and Builds
 
 ```bash
 dart format --output=none --set-exit-if-changed lib test
@@ -139,9 +143,9 @@ flutter test test/redesign_test.dart --concurrency=1 --dart-define=EXPORT_PREVIE
 
 See [Feature coverage](docs/features.md), [Architecture](docs/architecture.md), and [Verification notes](docs/verification.md) for more detail.
 
-## Workflow and Contributing
+## 🛠️ Workflow and Contributing
 
-### Branch naming
+### 🌳 Branch naming
 
 Start from the latest `dev` and use `type/description-slug`. Write the slug in lowercase English with hyphens between words.
 
@@ -155,7 +159,7 @@ Start from the latest `dev` and use `type/description-slug`. Write the slug in l
 | `docs` | Update documentation | `docs/update-mobile-readme` |
 | `test` | Add or improve automated coverage | `test/customer-order-flow` |
 
-### Commit messages
+### 💬 Commit messages
 
 Use `type(scope): description` for feature changes or `type: description` for project-wide changes. Start the lowercase description with an imperative verb, omit the final period, and keep the commit focused on one feature or related change.
 
@@ -166,7 +170,7 @@ refactor(ui): extract order status badge
 chore: update flutter sdk
 ```
 
-### Pull requests
+### 🔀 Pull requests
 
 1. Create a working branch from the latest `dev`.
 2. Run the formatter, analyzer, and relevant tests. Check UI changes on a phone or emulator.
