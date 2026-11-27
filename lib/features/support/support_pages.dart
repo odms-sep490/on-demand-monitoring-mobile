@@ -12,10 +12,17 @@ import '../auth/session.dart';
 
 import 'faq_page.dart';
 
-class SupportPage extends ConsumerWidget {
+class SupportPage extends ConsumerStatefulWidget {
   const SupportPage({super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SupportPage> createState() => _SupportPageState();
+}
+
+class _SupportPageState extends ConsumerState<SupportPage> {
+  int version = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final api = ref.watch(apiProvider), user = ref.watch(sessionProvider).user!;
     return PortalScaffold(
       appBar: AppBar(
@@ -31,6 +38,7 @@ class SupportPage extends ConsumerWidget {
         ],
       ),
       body: RemoteView(
+        key: ValueKey(version),
         load: () => api.request('/api/support-tickets'),
         builder: (context, data, reload) => RecordList(
           items: records(data),
@@ -99,8 +107,8 @@ class SupportPage extends ConsumerWidget {
                         body: body,
                       ),
                     ) &&
-                    context.mounted) {
-                  Navigator.pop(context);
+                    mounted) {
+                  setState(() => version++);
                 }
               },
               child: const Icon(Icons.add),
