@@ -64,7 +64,7 @@ class _CustomerMediaPageState extends ConsumerState<CustomerMediaPage> {
               ),
             ),
             Expanded(
-              child: RecordList(
+              child: _MediaGrid(
                 items: records(data)
                     .where(
                       (item) =>
@@ -172,6 +172,104 @@ class _CustomerMediaPageState extends ConsumerState<CustomerMediaPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MediaGrid extends StatelessWidget {
+  const _MediaGrid({
+    required this.items,
+    required this.refresh,
+    required this.onTap,
+  });
+  final List<Json> items;
+  final VoidCallback refresh;
+  final ValueChanged<Json> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return RefreshIndicator(
+      onRefresh: () async => refresh(),
+      child: items.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(24),
+              children: [
+                Text(
+                  context.tr(
+                    'No matching media.',
+                    'Chưa có ảnh hoặc video phù hợp.',
+                  ),
+                ),
+              ],
+            )
+          : GridView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 240,
+                mainAxisExtent: 174,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final video = item['mediaType'] == 'VIDEO';
+                Widget placeholder() => ColoredBox(
+                  color: colors.secondaryContainer,
+                  child: Center(
+                    child: Icon(
+                      video ? Icons.videocam_outlined : Icons.image_outlined,
+                    ),
+                  ),
+                );
+                return Material(
+                  color: colors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => onTap(item),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (item['thumbnailUrl'] case final String url
+                                  when url.isNotEmpty)
+                                Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => placeholder(),
+                                )
+                              else
+                                placeholder(),
+                              if (video)
+                                const Center(
+                                  child: CircleAvatar(
+                                    child: Icon(Icons.play_arrow),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Text(
+                            recordTitle(item),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

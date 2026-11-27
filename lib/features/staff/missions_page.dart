@@ -20,6 +20,7 @@ class StaffMissionsPage extends ConsumerStatefulWidget {
 
 class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
   int tab = 0;
+  DateTime? selectedDate;
   String query = '';
   @override
   Widget build(BuildContext context) {
@@ -73,7 +74,26 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
               upcoming = missions
                   .where((e) => !terminal(e) && !pending(e))
                   .toList();
+          final dates =
+              missions
+                  .map(
+                    (item) => DateTime.tryParse('${item['scheduledStartAt']}'),
+                  )
+                  .whereType<DateTime>()
+                  .map((time) => DateUtils.dateOnly(time.toLocal()))
+                  .toSet()
+                  .toList()
+                ..sort();
           final filtered = [pendingItems, upcoming, history][tab]
+              .where(
+                (item) =>
+                    selectedDate == null ||
+                    DateUtils.isSameDay(
+                      DateTime.tryParse('${item['scheduledStartAt']}')
+                          ?.toLocal(),
+                      selectedDate,
+                    ),
+              )
               .where(
                 (item) =>
                     '${recordTitle(item)} ${item['orderCode']} ${item['address']}'
@@ -138,6 +158,33 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
                     ],
                   ),
                 ),
+                if (dates.isNotEmpty)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: Text(context.tr('All days', 'Tất cả ngày')),
+                          selected: selectedDate == null,
+                          onSelected: (_) =>
+                              setState(() => selectedDate = null),
+                        ),
+                        for (final date in dates)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: ChoiceChip(
+                              label: Text(
+                                MaterialLocalizations.of(context)
+                                    .formatShortDate(date),
+                              ),
+                              selected: DateUtils.isSameDay(selectedDate, date),
+                              onSelected: (_) =>
+                                  setState(() => selectedDate = date),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 SectionCard(
                   padding: const EdgeInsets.all(8),
                   child: Row(
@@ -231,7 +278,9 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
                     ),
                   ),
                 for (final mission in filtered)
-                  DomainCard(
+                  _ScheduledMissionRow(
+                    start: DateTime.tryParse('${mission['scheduledStartAt']}')
+                        ?.toLocal(),
                     item: mission,
                     onTap: () async {
                       await context.push(
@@ -285,6 +334,44 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
           );
         },
       ),
+    );
+  }
+}
+
+class _ScheduledMissionRow extends StatelessWidget {
+  const _ScheduledMissionRow({
+    required this.start,
+    required this.item,
+    required this.onTap,
+  });
+  final DateTime? start;
+  final Json item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = this.start;
+    if (start == null) return DomainCard(item: item, onTap: onTap);
+    final time = MaterialLocalizations.of(context)
+        .formatTimeOfDay(TimeOfDay.fromDateTime(start));
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 52,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Text(
+              time,
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: Theme.of(context).colorScheme.primary),
+            ),
+          ),
+        ),
+        Expanded(
+          child: DomainCard(item: item, onTap: onTap),
+        ),
+      ],
     );
   }
 }
