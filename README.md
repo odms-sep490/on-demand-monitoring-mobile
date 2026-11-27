@@ -20,7 +20,7 @@ ODMS Mobile is the Flutter client for the **On-Demand Monitoring System**. It co
 | Area | Technology |
 | --- | --- |
 | App | Flutter 3.51.0-0.2.pre and Dart with SDK constraint `^3.14.0` |
-| UI | Material 3 widgets, Be Vietnam Pro, light and dark themes |
+| UI | Material 3 widgets and Be Vietnam Pro |
 | State and routing | Riverpod and GoRouter |
 | API and authentication | Dio, Flutter Secure Storage, and Cognito for Google sign-in |
 | Maps | flutter_map and latlong2 |
@@ -84,9 +84,7 @@ Keep screen entry points focused on loading data, composing components, and navi
 
 ## 🎨 Design Guide
 
-**Style** · Dark surfaces, ODMS blue accents, and monitoring imagery.
-
-![ODMS dark theme color swatches](docs/images/odms-color-palette.png)
+**Style** · ODMS blue accents, navy tones, and monitoring imagery.
 
 - **Colors** · Blue `#1565E8` for primary actions, navy `#0B1226` for the canvas, and slate `#111B36` for surfaces.
 - **Borders and corners** · Subtle `#1F2C4D` outlines, 16 px corners on section cards, and 12 px corners on buttons and inputs.
