@@ -21,11 +21,14 @@ class MediaUploader {
     final pending = (jsonDecode(raw) as List).map(object).toList();
     while (pending.isNotEmpty) {
       final event = pending.first;
-      await api.request(
-        '${event['path']}',
-        method: 'POST',
-        body: event['body'],
+      final acknowledgment = object(
+        await api.request(
+          '${event['path']}',
+          method: 'POST',
+          body: event['body'],
+        ),
       );
+      if (acknowledgment['durablyAccepted'] != true) return;
       pending.removeAt(0);
       await api.secrets.write(
         journalKey,

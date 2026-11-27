@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,33 @@ import 'package:odms_mobile/features/staff/media_upload.dart';
 import 'api_client_test.dart' show FakeAdapter, MemorySecrets, response;
 
 void main() {
+  test(
+    'failed upload stays in the journal until the server stores it',
+    () async {
+      final dio = Dio(BaseOptions(baseUrl: 'https://odms.example'));
+      var durable = false;
+      dio.httpClientAdapter = FakeAdapter(
+        (_) async =>
+            response({'durablyAccepted': durable, 'retryLater': !durable}),
+      );
+      final secrets = MemorySecrets();
+      final api = ApiClient('https://odms.example', secrets, transport: dio);
+      final uploader = MediaUploader(api, 'staff-id');
+      final pending = jsonEncode([
+        {
+          'path': '/api/media/example/failure',
+          'body': {'eventId': 'one'},
+        },
+      ]);
+      await secrets.write(uploader.journalKey, pending);
+      await uploader.replayFailures();
+      expect(await secrets.read(uploader.journalKey), pending);
+      durable = true;
+      await uploader.replayFailures();
+      expect(await secrets.read(uploader.journalKey), isNull);
+    },
+  );
+
   test(
     'staff route policy excludes the complete flight workflow and other roles',
     () {
