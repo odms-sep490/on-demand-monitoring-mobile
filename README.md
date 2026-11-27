@@ -84,35 +84,17 @@ Keep screen entry points focused on loading data, composing components, and navi
 
 ## 🎨 Design Guide
 
-ODMS uses a blue accent, restrained borders, clean typography, and imagery tied to the monitoring service or task. Start with the [app theme](lib/app/theme.dart) and [shared UI components](lib/shared/mobile_ui.dart) when building a page.
+**Style** · Dark surfaces, ODMS blue accents, and monitoring imagery.
 
-### Color and type
+![ODMS dark theme color swatches](docs/images/odms-color-palette.png)
 
-![ODMS light and dark theme swatches](docs/images/odms-color-palette.png)
+- **Colors** · Blue `#1565E8` for primary actions, navy `#0B1226` for the canvas, and slate `#111B36` for surfaces.
+- **Borders and corners** · Subtle `#1F2C4D` outlines, 16 px corners on section cards, and 12 px corners on buttons and inputs.
+- **Typography** · Be Vietnam Pro, with bold headlines and muted secondary text.
+- **Layout** · Put the task, status, and primary action first. Use map coverage and order imagery where they help the user understand the request.
+- **Motion** · Use short transitions to show state changes. Order detail tabs use a 180 ms transition and respect reduced motion.
 
-| Token | Light theme | Dark theme | Use |
-| --- | --- | --- | --- |
-| Primary | `#1565E8` | `#1565E8` | Primary actions, focus, and selected navigation |
-| Canvas | `#F4F7FC` | `#0B1226` | Screen background |
-| Surface | `#FFFFFF` | `#111B36` | Cards, inputs, and navigation |
-| Text | `#0F1B3D` | `#E6ECFA` | Headings and primary content |
-| Secondary text | `#64748B` | `#93A1C0` | Supporting text and metadata |
-| Border | `#E6ECF5` | `#1F2C4D` | Dividers and outlines |
-
-Use the Be Vietnam Pro styles from `Theme.of(context).textTheme`. Screen headlines use 21 to 28 logical pixels and bold weight. Body styles use 12 to 14 logical pixels. Read colors from the theme so components adapt to both modes.
-
-### Layout and interaction
-
-| Element | Pattern |
-| --- | --- |
-| Page hierarchy | Lead with the current task, the primary action, and the status. Group supporting information below it. |
-| Cards and spacing | Use `SectionCard` for related information. Its default padding and corner radius are 16 logical pixels. Use a flat list where rows belong to the same group. |
-| Actions and forms | Use a filled button for the primary action and outlined buttons for secondary actions. Theme buttons and inputs use 12-pixel corners. Keep form labels visible and place validation feedback by the corresponding field. |
-| Maps and media | Show the selected coverage and the order's own images when available. Keep map attribution visible and show a clear placeholder when media is unavailable. |
-| Status and feedback | Pair status color with a readable label. Include loading, empty, and retry states on screens that fetch data. |
-| Motion | Use short transitions to show a change in state. Order detail tabs use a 180 ms transition and respect the system's reduced-motion preference. |
-
-Keep the six-step request flow aligned with the web workflow, with the map in step 2. Check new screens at phone width in both themes and in both supported app languages, English and Vietnamese.
+See the [Flutter theme](lib/app/theme.dart) and [shared UI components](lib/shared/mobile_ui.dart) for implementation.
 
 ## 🧪 Verification and Builds
 
