@@ -170,17 +170,22 @@ class SiteAdvisoryPage extends ConsumerWidget {
                         'Chưa có dự báo cho ngày đã chọn.',
                       ),
                     ),
+                  if (weather['status'] == 'AVAILABLE')
+                    _WeatherSummary(weather: weather),
                   DetailFields(
                     data: weather,
                     fields: const {
                       'weatherLabel': ('Conditions', 'Điều kiện'),
                       'forecastTime': ('Forecast time', 'Thời gian dự báo'),
-                      'temperatureC': ('Temperature (°C)', 'Nhiệt độ (°C)'),
-                      'precipitationProbabilityPercent': (
-                        'Rain probability (%)',
-                        'Khả năng mưa (%)',
+                      'relativeHumidityPercent': ('Humidity (%)', 'Độ ẩm (%)'),
+                      'precipitationMm': (
+                        'Precipitation (mm)',
+                        'Lượng mưa (mm)',
                       ),
-                      'windSpeedKmh': ('Wind (km/h)', 'Gió (km/h)'),
+                      'cloudCoverPercent': (
+                        'Cloud cover (%)',
+                        'Mây che phủ (%)',
+                      ),
                       'windGustKmh': ('Gust (km/h)', 'Gió giật (km/h)'),
                       'visibilityMeters': ('Visibility (m)', 'Tầm nhìn (m)'),
                       'suitability': ('Suitability', 'Mức độ phù hợp'),
@@ -331,4 +336,71 @@ class SiteAdvisoryPage extends ConsumerWidget {
       },
     ),
   );
+}
+
+class _WeatherSummary extends StatelessWidget {
+  const _WeatherSummary({required this.weather});
+  final Json weather;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Wrap(
+        spacing: 18,
+        runSpacing: 12,
+        children: [
+          for (final (key, unit, label, icon) in [
+            (
+              'temperatureC',
+              '°C',
+              context.tr('Temperature', 'Nhiệt độ'),
+              Icons.thermostat_outlined,
+            ),
+            (
+              'precipitationProbabilityPercent',
+              '%',
+              context.tr('Rain chance', 'Khả năng mưa'),
+              Icons.water_drop_outlined,
+            ),
+            (
+              'windSpeedKmh',
+              'km/h',
+              context.tr('Wind', 'Gió'),
+              Icons.air_outlined,
+            ),
+          ])
+            if (weather[key] case final num value)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                  Text(
+                    '$value $unit',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+        ],
+      ),
+    );
+  }
 }
