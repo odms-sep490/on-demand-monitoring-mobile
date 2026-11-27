@@ -1,3 +1,5 @@
+import '../../shared/workspace_hero.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -105,7 +107,7 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                PageIntro(
+                WorkspaceHero(
                   title: context.tr(
                     'Your assigned missions',
                     'Nhiệm vụ được giao',
@@ -136,46 +138,6 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
                     ],
                   ),
                 ),
-                StatGrid(
-                  children: [
-                    StatTile(
-                      label: context.tr('Awaiting reply', 'Chờ phản hồi'),
-                      value: '${pendingItems.length}',
-                      icon: Icons.mark_email_unread_outlined,
-                      color: const Color(0xFFF59E0B),
-                    ),
-                    StatTile(
-                      label: context.tr('Today', 'Hôm nay'),
-                      value: '$today',
-                      icon: Icons.today_outlined,
-                    ),
-                    StatTile(
-                      label: context.tr(
-                        'Upcoming this week',
-                        'Sắp tới trong tuần',
-                      ),
-                      value: '$week',
-                      icon: Icons.date_range_outlined,
-                    ),
-                    StatTile(
-                      label: context.tr(
-                        'Valid qualifications',
-                        'Chứng chỉ còn hiệu lực',
-                      ),
-                      value: data['licenseError'] == null
-                          ? '$validLicenses'
-                          : '—',
-                      icon: Icons.verified_outlined,
-                      color: const Color(0xFF16A34A),
-                      note: data['licenseError'] == null
-                          ? null
-                          : context.tr(
-                              'Could not load qualifications',
-                              'Chưa tải được chứng chỉ',
-                            ),
-                    ),
-                  ],
-                ),
                 SectionCard(
                   padding: const EdgeInsets.all(8),
                   child: Row(
@@ -193,7 +155,10 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(10),
                             onTap: () => setState(() => tab = index),
-                            child: Container(
+                            child: AnimatedContainer(
+                              duration: MediaQuery.disableAnimationsOf(context)
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 180),
                               padding: const EdgeInsets.symmetric(
                                 vertical: 11,
                                 horizontal: 4,
@@ -275,6 +240,46 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
                       reload();
                     },
                   ),
+                StatGrid(
+                  children: [
+                    StatTile(
+                      label: context.tr('Awaiting reply', 'Chờ phản hồi'),
+                      value: '${pendingItems.length}',
+                      icon: Icons.mark_email_unread_outlined,
+                      color: const Color(0xFFF59E0B),
+                    ),
+                    StatTile(
+                      label: context.tr('Today', 'Hôm nay'),
+                      value: '$today',
+                      icon: Icons.today_outlined,
+                    ),
+                    StatTile(
+                      label: context.tr(
+                        'Upcoming this week',
+                        'Sắp tới trong tuần',
+                      ),
+                      value: '$week',
+                      icon: Icons.date_range_outlined,
+                    ),
+                    StatTile(
+                      label: context.tr(
+                        'Valid qualifications',
+                        'Chứng chỉ còn hiệu lực',
+                      ),
+                      value: data['licenseError'] == null
+                          ? '$validLicenses'
+                          : '—',
+                      icon: Icons.verified_outlined,
+                      color: const Color(0xFF16A34A),
+                      note: data['licenseError'] == null
+                          ? null
+                          : context.tr(
+                              'Could not load qualifications',
+                              'Chưa tải được chứng chỉ',
+                            ),
+                    ),
+                  ],
+                ),
               ],
             ),
           );

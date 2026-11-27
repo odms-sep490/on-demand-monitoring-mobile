@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../shared/editor.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
+import '../../shared/mobile_ui.dart';
 import 'finance_page.dart';
 import 'order_actions.dart';
 import 'order_confirmation.dart';
@@ -40,38 +41,70 @@ class OrderDetailPage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              Text(
-                recordTitle(order),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              if (manager)
+                Text(
+                  recordTitle(order),
+                  style: Theme.of(context).textTheme.headlineSmall,
+                )
+              else
+                _CustomerOrderHeader(order: order),
               const SizedBox(height: 16),
-              DetailFields(
-                data: order,
-                fields: const {
-                  'orderCode': ('Order number', 'Mã đơn hàng'),
-                  'orderStatus': ('Status', 'Trạng thái'),
-                  'serviceName': ('Service', 'Dịch vụ'),
-                  'description': ('Description', 'Mô tả'),
-                  'address': ('Site', 'Địa điểm'),
-                  'preferredDateFrom': ('From', 'Từ ngày'),
-                  'preferredDateTo': ('To', 'Đến ngày'),
-                  'preferredTimeName': ('Time slot', 'Khung giờ'),
-                  'siteContactName': ('Site contact', 'Người liên hệ'),
-                  'siteContactPhone': ('Phone', 'Điện thoại'),
-                  'accessNotes': ('Access notes', 'Lưu ý tiếp cận'),
-                  'rejectReason': ('Review note', 'Ý kiến duyệt'),
-                  'legalReviewStatus': ('Permit review', 'Duyệt giấy phép'),
-                  'recurrenceType': ('Repeat', 'Lặp lại'),
-                  'dataRetentionDays': ('Retention (days)', 'Lưu trữ (ngày)'),
-                },
-              ),
-              for (final item in records(order['checklistItems']))
-                Card(
-                  child: ListTile(
-                    title: Text('${item['content'] ?? ''}'),
-                    subtitle: Text('${item['requiredEvidenceType'] ?? ''}'),
+              SectionCard(
+                child: ExpansionTile(
+                  initiallyExpanded: manager,
+                  tilePadding: EdgeInsets.zero,
+                  title: Text(
+                    context.tr('Order information', 'Thông tin đơn hàng'),
                   ),
+                  children: [
+                    DetailFields(
+                      data: order,
+                      fields: const {
+                        'orderCode': ('Order number', 'Mã đơn hàng'),
+                        'orderStatus': ('Status', 'Trạng thái'),
+                        'serviceName': ('Service', 'Dịch vụ'),
+                        'description': ('Description', 'Mô tả'),
+                        'address': ('Site', 'Địa điểm'),
+                        'preferredDateFrom': ('From', 'Từ ngày'),
+                        'preferredDateTo': ('To', 'Đến ngày'),
+                        'preferredTimeName': ('Time slot', 'Khung giờ'),
+                        'siteContactName': ('Site contact', 'Người liên hệ'),
+                        'siteContactPhone': ('Phone', 'Điện thoại'),
+                        'accessNotes': ('Access notes', 'Lưu ý tiếp cận'),
+                        'rejectReason': ('Review note', 'Ý kiến duyệt'),
+                        'legalReviewStatus': (
+                          'Permit review',
+                          'Duyệt giấy phép',
+                        ),
+                        'recurrenceType': ('Repeat', 'Lặp lại'),
+                        'dataRetentionDays': (
+                          'Retention (days)',
+                          'Lưu trữ (ngày)',
+                        ),
+                      },
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(height: 10),
+              SectionCard(
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: Text(
+                    context.tr('Monitoring checklist', 'Hạng mục giám sát'),
+                  ),
+                  subtitle: Text('${records(order['checklistItems']).length}'),
+                  children: [
+                    for (final item in records(order['checklistItems']))
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.checklist_outlined),
+                        title: Text('${item['content'] ?? ''}'),
+                        subtitle: Text('${item['requiredEvidenceType'] ?? ''}'),
+                      ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
               FilledButton.tonal(
                 onPressed: () =>
@@ -332,6 +365,74 @@ class CustomerMissionsPage extends ConsumerWidget {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomerOrderHeader extends StatelessWidget {
+  const _CustomerOrderHeader({required this.order});
+  final Json order;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final status = recordStatus(order);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/construction-640.webp'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF0C2141), Color(0xD6123C6B)],
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (order['orderCode'] != null)
+                Text(
+                  '${order['orderCode']}',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: const Color(0xFFB7DEFF),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Text(
+                recordTitle(order),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+              if (order['address'] != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${order['address']}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFFE4F1FF),
+                  ),
+                ),
+              ],
+              if (status.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: StatusPill(status: status),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

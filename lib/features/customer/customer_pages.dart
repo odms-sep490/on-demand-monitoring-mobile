@@ -1,3 +1,5 @@
+import 'service_picker.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -39,45 +41,17 @@ Future<bool> createOrder(BuildContext context, ApiClient api) async {
 }
 
 Future<bool> _createOrder(BuildContext context, ApiClient api) async {
-  final service = await editRecord(
-    context,
-    title: context.tr('1. Service and purpose', '1. Dịch vụ & mục tiêu'),
-    fields: [
-      FieldSpec(
-        'serviceId',
-        'Service',
-        'Dịch vụ',
-        kind: FieldKind.choice,
-        loadOptions: () =>
-            lookup(api, '/api/services', query: {'activeOnly': true}),
-      ),
-      const FieldSpec('title', 'Title', 'Tiêu đề'),
-      const FieldSpec(
-        'description',
-        'Description',
-        'Mô tả',
-        kind: FieldKind.multiline,
-        required: false,
-      ),
-      const FieldSpec(
-        'flightPurpose',
-        'Monitoring purpose',
-        'Mục đích giám sát',
-        kind: FieldKind.choice,
-        options: {
-          'SURVEY_MONITORING': 'Survey / Khảo sát',
-          'AGRICULTURE': 'Agriculture / Nông nghiệp',
-          'CONSTRUCTION_MONITORING': 'Construction / Công trình',
-          'INDUSTRIAL_INSPECTION':
-              'Industrial inspection / Kiểm tra công nghiệp',
-          'AREA_MONITORING': 'Area monitoring / Giám sát khu vực',
-          'FOREST_MONITORING': 'Forest monitoring / Giám sát rừng',
-          'OTHER': 'Other / Khác',
-        },
-      ),
-    ],
+  final services = records(
+    await api.request('/api/services', query: {'activeOnly': true}),
+  ).where((row) => row['id'] is String).toList();
+  if (!context.mounted) return false;
+  final service = await Navigator.of(context).push<Json>(
+    MaterialPageRoute(
+      builder: (_) => CustomerServicePicker(services: services),
+    ),
   );
   if (service == null || !context.mounted) return false;
+  final serviceId = service['serviceId'] as String;
   final location = await editRecord(
     context,
     title: context.tr('2. Monitoring location', '2. Vị trí & vùng giám sát'),
@@ -92,9 +66,7 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
   );
   if (area == null || !context.mounted) return false;
   final templates = records(
-    await api.request(
-      '/api/services/${segment('${service['serviceId']}')}/checklists',
-    ),
+    await api.request('/api/services/${segment(serviceId)}/checklists'),
   );
   if (!context.mounted) return false;
   final selected = await Navigator.push<List<Json>>(
@@ -103,7 +75,7 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
       builder: (_) => CustomerChecklistEditor(
         returnSelection: true,
         order: {
-          'serviceId': service['serviceId'],
+          'serviceId': serviceId,
           'checklistItems': templates
               .where(
                 (e) =>
@@ -307,7 +279,7 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
         loadOptions: () => lookup(
           api,
           '/api/service-deliverables',
-          query: {'serviceId': service['serviceId']},
+          query: {'serviceId': serviceId},
           key: 'deliverableTypeId',
           label: 'deliverableTypeName',
         ),
@@ -337,7 +309,7 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
     ...delivery,
   };
   final body = OrderDraft(
-    service: {'serviceId': service['serviceId']},
+    service: {'serviceId': serviceId},
     details: details,
     area: area,
     compliance: compliance,

@@ -1,3 +1,5 @@
+import '../../shared/workspace_hero.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,7 +44,8 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                PageIntro(
+                WorkspaceHero(
+                  image: 'assets/images/construction-640.webp',
                   title: context.tr('Monitoring requests', 'Yêu cầu giám sát'),
                   description: context.tr(
                     'Track the status of the monitoring requests you submitted.',
@@ -63,35 +66,18 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
                           },
                   ),
                 ),
-                StatGrid(
-                  children: [
-                    StatTile(
-                      label: context.tr('Total orders', 'Tổng số đơn'),
-                      value: '${all.length}',
-                      icon: Icons.assignment_outlined,
+                if (all.isNotEmpty) ...[
+                  Text(
+                    context.tr('Latest order', 'Đơn gần nhất'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  DomainCard(
+                    item: all.first,
+                    onTap: () => context.push(
+                      '/customer/orders/${segment('${all.first['id']}')}',
                     ),
-                    StatTile(
-                      label: context.tr('Pending', 'Chờ duyệt'),
-                      value:
-                          '${all.where((e) => e['orderStatus'] == 'PENDING').length}',
-                      icon: Icons.hourglass_top,
-                      color: const Color(0xFFF59E0B),
-                    ),
-                    StatTile(
-                      label: context.tr('In progress', 'Đang thực hiện'),
-                      value:
-                          '${all.where((e) => e['orderStatus'] == 'IN_PROGRESS').length}',
-                      icon: Icons.radar,
-                    ),
-                    StatTile(
-                      label: context.tr('Completed', 'Hoàn thành'),
-                      value:
-                          '${all.where((e) => e['orderStatus'] == 'COMPLETED').length}',
-                      icon: Icons.task_alt,
-                      color: const Color(0xFF16A34A),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
                 SectionCard(
                   child: Column(
                     children: [
@@ -190,6 +176,35 @@ class _CustomerOrdersPageState extends ConsumerState<CustomerOrdersPage> {
                     },
                   ),
                 const SizedBox(height: 12),
+                StatGrid(
+                  children: [
+                    StatTile(
+                      label: context.tr('Total orders', 'Tổng số đơn'),
+                      value: '${all.length}',
+                      icon: Icons.assignment_outlined,
+                    ),
+                    StatTile(
+                      label: context.tr('Pending', 'Chờ duyệt'),
+                      value:
+                          '${all.where((e) => e['orderStatus'] == 'PENDING').length}',
+                      icon: Icons.hourglass_top,
+                      color: const Color(0xFFF59E0B),
+                    ),
+                    StatTile(
+                      label: context.tr('In progress', 'Đang thực hiện'),
+                      value:
+                          '${all.where((e) => e['orderStatus'] == 'IN_PROGRESS').length}',
+                      icon: Icons.radar,
+                    ),
+                    StatTile(
+                      label: context.tr('Completed', 'Hoàn thành'),
+                      value:
+                          '${all.where((e) => e['orderStatus'] == 'COMPLETED').length}',
+                      icon: Icons.task_alt,
+                      color: const Color(0xFF16A34A),
+                    ),
+                  ],
+                ),
               ],
             ),
           );
