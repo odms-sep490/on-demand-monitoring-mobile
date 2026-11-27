@@ -48,61 +48,75 @@ class OrderDetailPage extends ConsumerWidget {
                 )
               else
                 _CustomerOrderHeader(order: order),
+              if (!manager) ...[
+                const SizedBox(height: 12),
+                _OrderProgress(status: recordStatus(order)),
+              ],
               const SizedBox(height: 16),
               SectionCard(
-                child: ExpansionTile(
-                  initiallyExpanded: manager,
-                  tilePadding: EdgeInsets.zero,
-                  title: Text(
-                    context.tr('Order information', 'Thông tin đơn hàng'),
-                  ),
-                  children: [
-                    DetailFields(
-                      data: order,
-                      fields: const {
-                        'orderCode': ('Order number', 'Mã đơn hàng'),
-                        'orderStatus': ('Status', 'Trạng thái'),
-                        'serviceName': ('Service', 'Dịch vụ'),
-                        'description': ('Description', 'Mô tả'),
-                        'address': ('Site', 'Địa điểm'),
-                        'preferredDateFrom': ('From', 'Từ ngày'),
-                        'preferredDateTo': ('To', 'Đến ngày'),
-                        'preferredTimeName': ('Time slot', 'Khung giờ'),
-                        'siteContactName': ('Site contact', 'Người liên hệ'),
-                        'siteContactPhone': ('Phone', 'Điện thoại'),
-                        'accessNotes': ('Access notes', 'Lưu ý tiếp cận'),
-                        'rejectReason': ('Review note', 'Ý kiến duyệt'),
-                        'legalReviewStatus': (
-                          'Permit review',
-                          'Duyệt giấy phép',
-                        ),
-                        'recurrenceType': ('Repeat', 'Lặp lại'),
-                        'dataRetentionDays': (
-                          'Retention (days)',
-                          'Lưu trữ (ngày)',
-                        ),
-                      },
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: ExpansionTile(
+                    initiallyExpanded: manager,
+                    tilePadding: EdgeInsets.zero,
+                    title: Text(
+                      context.tr('Order information', 'Thông tin đơn hàng'),
                     ),
-                  ],
+                    children: [
+                      DetailFields(
+                        data: order,
+                        fields: const {
+                          'orderCode': ('Order number', 'Mã đơn hàng'),
+                          'orderStatus': ('Status', 'Trạng thái'),
+                          'serviceName': ('Service', 'Dịch vụ'),
+                          'description': ('Description', 'Mô tả'),
+                          'address': ('Site', 'Địa điểm'),
+                          'preferredDateFrom': ('From', 'Từ ngày'),
+                          'preferredDateTo': ('To', 'Đến ngày'),
+                          'preferredTimeName': ('Time slot', 'Khung giờ'),
+                          'siteContactName': ('Site contact', 'Người liên hệ'),
+                          'siteContactPhone': ('Phone', 'Điện thoại'),
+                          'accessNotes': ('Access notes', 'Lưu ý tiếp cận'),
+                          'rejectReason': ('Review note', 'Ý kiến duyệt'),
+                          'legalReviewStatus': (
+                            'Permit review',
+                            'Duyệt giấy phép',
+                          ),
+                          'recurrenceType': ('Repeat', 'Lặp lại'),
+                          'dataRetentionDays': (
+                            'Retention (days)',
+                            'Lưu trữ (ngày)',
+                          ),
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
               SectionCard(
-                child: ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  title: Text(
-                    context.tr('Monitoring checklist', 'Hạng mục giám sát'),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: Text(
+                      context.tr('Monitoring checklist', 'Hạng mục giám sát'),
+                    ),
+                    subtitle: Text(
+                      '${records(order['checklistItems']).length}',
+                    ),
+                    children: [
+                      for (final item in records(order['checklistItems']))
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.checklist_outlined),
+                          title: Text('${item['content'] ?? ''}'),
+                          subtitle: Text(
+                            '${item['requiredEvidenceType'] ?? ''}',
+                          ),
+                        ),
+                    ],
                   ),
-                  subtitle: Text('${records(order['checklistItems']).length}'),
-                  children: [
-                    for (final item in records(order['checklistItems']))
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.checklist_outlined),
-                        title: Text('${item['content'] ?? ''}'),
-                        subtitle: Text('${item['requiredEvidenceType'] ?? ''}'),
-                      ),
-                  ],
                 ),
               ),
               const SizedBox(height: 16),
@@ -434,6 +448,72 @@ class _CustomerOrderHeader extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _OrderProgress extends StatelessWidget {
+  const _OrderProgress({required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final stage = switch (status) {
+      'PENDING' || 'UNDER_REVIEW' || 'NEEDS_INFO' => 1,
+      'APPROVED' || 'IN_PROGRESS' => 2,
+      'COMPLETED' => 3,
+      _ => null,
+    };
+    if (stage == null) return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+    final phases = [
+      context.tr('Request received', 'Đã tiếp nhận'),
+      context.tr('Order review', 'Duyệt đơn'),
+      context.tr('Monitoring', 'Giám sát'),
+      context.tr('Monitoring complete', 'Hoàn thành giám sát'),
+    ];
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('Order progress', 'Tiến độ đơn'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 12),
+          for (final (index, label) in phases.indexed)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  Icon(
+                    index < stage
+                        ? Icons.check_circle
+                        : index == stage
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    size: 19,
+                    color: index <= stage ? colors.primary : colors.outline,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: index == stage
+                          ? Theme.of(context).textTheme.titleSmall
+                          : null,
+                    ),
+                  ),
+                  if (index == stage)
+                    Text(
+                      context.tr('Current', 'Hiện tại'),
+                      style: TextStyle(color: colors.primary),
+                    ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
