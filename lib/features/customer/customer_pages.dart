@@ -45,43 +45,13 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
     await api.request('/api/services', query: {'activeOnly': true}),
   ).where((row) => row['id'] is String).toList();
   if (!context.mounted) return false;
-  final serviceId = await Navigator.of(context).push<String>(
+  final service = await Navigator.of(context).push<Json>(
     MaterialPageRoute(
       builder: (_) => CustomerServicePicker(services: services),
     ),
   );
-  if (serviceId == null || !context.mounted) return false;
-  final service = await editRecord(
-    context,
-    title: context.tr('1. Service and purpose', '1. Dịch vụ & mục tiêu'),
-    fields: [
-      const FieldSpec('title', 'Title', 'Tiêu đề'),
-      const FieldSpec(
-        'description',
-        'Description',
-        'Mô tả',
-        kind: FieldKind.multiline,
-        required: false,
-      ),
-      const FieldSpec(
-        'flightPurpose',
-        'Monitoring purpose',
-        'Mục đích giám sát',
-        kind: FieldKind.choice,
-        options: {
-          'SURVEY_MONITORING': 'Survey / Khảo sát',
-          'AGRICULTURE': 'Agriculture / Nông nghiệp',
-          'CONSTRUCTION_MONITORING': 'Construction / Công trình',
-          'INDUSTRIAL_INSPECTION':
-              'Industrial inspection / Kiểm tra công nghiệp',
-          'AREA_MONITORING': 'Area monitoring / Giám sát khu vực',
-          'FOREST_MONITORING': 'Forest monitoring / Giám sát rừng',
-          'OTHER': 'Other / Khác',
-        },
-      ),
-    ],
-  );
   if (service == null || !context.mounted) return false;
+  final serviceId = service['serviceId'] as String;
   final location = await editRecord(
     context,
     title: context.tr('2. Monitoring location', '2. Vị trí & vùng giám sát'),
