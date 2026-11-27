@@ -14,7 +14,13 @@ class RemoteView extends StatefulWidget {
 
 class _RemoteViewState extends State<RemoteView> {
   late Future<Object?> future = widget.load();
-  void reload() => setState(() => future = widget.load());
+  void reload() {
+    final next = widget.load();
+    setState(() {
+      future = next;
+    });
+  }
+
   @override
   Widget build(BuildContext context) => FutureBuilder<Object?>(
     future: future,
