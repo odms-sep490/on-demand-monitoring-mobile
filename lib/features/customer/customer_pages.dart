@@ -171,21 +171,29 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
     includeDeliveryOptions: false,
   );
   if (compliance == null || !context.mounted) return false;
+  final businessNow = DateTime.now().toUtc().add(const Duration(hours: 7));
+  final earliestDate = DateTime(
+    businessNow.year,
+    businessNow.month,
+    businessNow.day + 7,
+  );
   final schedule = await editRecord(
     context,
     title: context.tr('5. Schedule', '5. Thời gian'),
     fields: [
-      const FieldSpec(
+      FieldSpec(
         'preferredDateFrom',
         'Start date',
         'Từ ngày',
         kind: FieldKind.date,
+        firstDate: earliestDate,
       ),
-      const FieldSpec(
+      FieldSpec(
         'preferredDateTo',
         'End date',
         'Đến ngày',
         kind: FieldKind.date,
+        firstDate: earliestDate,
       ),
       FieldSpec(
         'preferredTimeId',
@@ -235,6 +243,13 @@ Future<bool> _createOrder(BuildContext context, ApiClient api) async {
       ),
     ],
     validate: (body) {
+      final start = DateTime.tryParse('${body['preferredDateFrom']}');
+      if (start == null || start.isBefore(earliestDate)) {
+        return context.tr(
+          'Book monitoring at least 7 days in advance.',
+          'Vui lòng đặt lịch giám sát trước ít nhất 7 ngày.',
+        );
+      }
       if ('${body['preferredDateFrom']}'.compareTo(
             '${body['preferredDateTo']}',
           ) >

@@ -27,6 +27,7 @@ class FieldSpec {
     this.min,
     this.max,
     this.initial,
+    this.firstDate,
   });
   final String key, en, vi;
   final FieldKind kind;
@@ -35,6 +36,7 @@ class FieldSpec {
   final Future<Map<String, String>> Function()? loadOptions;
   final num? min, max;
   final Object? initial;
+  final DateTime? firstDate;
 }
 
 Future<Json?> editRecord(
@@ -123,10 +125,12 @@ class _EditorPageState extends State<EditorPage> {
 
   Future<void> pickDate(FieldSpec field) async {
     final now = DateTime.now();
+    final firstDate = field.firstDate ?? DateTime(2000);
+    final selected = DateTime.tryParse('${values[field.key]}') ?? now;
     final date = await showDatePicker(
       context: context,
-      initialDate: DateTime.tryParse('${values[field.key]}') ?? now,
-      firstDate: DateTime(2000),
+      initialDate: selected.isBefore(firstDate) ? firstDate : selected,
+      firstDate: firstDate,
       lastDate: DateTime(now.year + 10),
     );
     if (date == null || !mounted) return;
