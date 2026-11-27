@@ -15,7 +15,11 @@ void main() {
     'real ODMS customer creates and retrieves a test order',
     () async {
       final api = ApiClient(baseUrl!, MemorySecrets());
-      await login(api, 'customer');
+      await login(
+        api,
+        Platform.environment['ODMS_SMOKE_CUSTOMER_EMAIL'] ??
+            'seed.customer@odms.local',
+      );
       final services = records(
         await api.request('/api/services', query: {'activeOnly': true}),
       );
@@ -99,12 +103,16 @@ void main() {
         expect(order['id'], isNotNull);
         final list = records(await api.request('/api/orders/mine'));
         expect(list.any((row) => row['id'] == order['id']), isTrue);
-        final manager = ApiClient(baseUrl, MemorySecrets());
-        await login(manager, 'manager');
-        final readiness = await manager.request(
-          '/api/manager/orders/${order['id']}/readiness',
+        final detail = object(await api.request('/api/orders/${order['id']}'));
+        expect(detail['id'], order['id']);
+        expect(detail['orderStatus'], 'PENDING');
+        expect(object(detail['coverageArea'])['type'], 'Polygon');
+        final library = await api.request('/api/customer/available-media');
+        expect(library, isA<List>());
+        expect(
+          await api.request('/api/customer/ai/change-analyses'),
+          isA<List>(),
         );
-        expect(object(readiness)['criteria'], isA<List>());
       } on ApiFailure catch (error) {
         fail('${error.status}: ${error.message} ${error.errors}');
       }
@@ -113,16 +121,80 @@ void main() {
         ? 'Requires ODMS_SMOKE_BASE_URL for an isolated backend and ODMS_SMOKE_PASSWORD.'
         : false,
   );
+  test(
+    'real ODMS Staff reads assignments and maintains its own busy schedule',
+    () async {
+      final api = ApiClient(baseUrl!, MemorySecrets());
+      await login(
+        api,
+        Platform.environment['ODMS_SMOKE_STAFF_EMAIL'] ??
+            'seed.drone.operator@odms.local',
+      );
+      final profile = AppUser.fromJson(
+        object(await api.request('/api/users/me')),
+      );
+      expect(profile.role, AppRole.staff);
+      expect(await api.request('/api/missions/mine'), isA<List>());
+      expect(
+        await api.request('/api/staff-licenses/users/${segment(profile.id)}'),
+        isA<List>(),
+      );
+      final date = DateTime.now()
+          .add(const Duration(days: 15))
+          .toIso8601String()
+          .split('T')
+          .first;
+      final week = object(
+        await api.request('/api/busy-schedules/me', query: {'date': date}),
+      );
+      final busy = records(week['items']);
+      final session = ['MORNING', 'AFTERNOON', 'EVENING'].firstWhere(
+        (candidate) => !busy.any(
+          (row) => row['date'] == date && row['session'] == candidate,
+        ),
+      );
+      final body = {
+        'date': date,
+        'session': session,
+        'notes': 'Flutter live integration',
+      };
+      final created = object(
+        await api.request('/api/busy-schedules', method: 'POST', body: body),
+      );
+      final id = created['id'] as String;
+      final path = '/api/busy-schedules/${segment(id)}';
+      try {
+        expect(object(await api.request(path))['session'], session);
+        final updated = object(
+          await api.request(
+            path,
+            method: 'PUT',
+            body: {...body, 'notes': 'Flutter live integration updated'},
+          ),
+        );
+        expect(updated['notes'], 'Flutter live integration updated');
+      } finally {
+        await api.request(path, method: 'DELETE');
+      }
+      final after = object(
+        await api.request('/api/busy-schedules/me', query: {'date': date}),
+      );
+      expect(records(after['items']).any((row) => row['id'] == id), isFalse);
+    },
+    skip: baseUrl == null || password == null
+        ? 'Requires ODMS_SMOKE_BASE_URL for an isolated backend and ODMS_SMOKE_PASSWORD.'
+        : false,
+  );
 }
 
-Future<void> login(ApiClient api, String role) async {
+Future<void> login(ApiClient api, String email) async {
   final password = Platform.environment['ODMS_SMOKE_PASSWORD'];
   final login = object(
     await api.request(
       '/api/auth/login',
       method: 'POST',
       authenticated: false,
-      body: {'email': 'seed.$role@odms.local', 'password': password},
+      body: {'email': email, 'password': password},
     ),
   );
   api.accessToken = login['accessToken'] as String;

@@ -1,10 +1,10 @@
 # ODMS Mobile — Flutter / Dart
 
-Ứng dụng Android và iOS cho **Customer, Staff, Manager**. Giao diện được thiết kế lại cho điện thoại, giữ nhận diện ODMS, font Be Vietnam Pro, nội dung và các luồng chính từ website. Không dùng WebView để bọc website.
+Ứng dụng Android và iOS cho **Customer và Staff**. Giao diện được thiết kế lại cho điện thoại, giữ nhận diện ODMS, font Be Vietnam Pro, nội dung và các luồng chính từ website. Không dùng WebView để bọc website.
 
 ## Chạy ứng dụng
 
-Yêu cầu Flutter **3.50.1 / Dart 3.14**, JDK 21 cho Android, và Xcode đầy đủ cho iOS.
+Yêu cầu Flutter **3.51.0-0.2.pre**, JDK 21 cho Android, và Xcode đầy đủ cho iOS.
 
 ```sh
 flutter pub get
@@ -18,6 +18,15 @@ Chỉnh `API_BASE_URL` trong file cấu hình:
 - iOS simulator: `http://localhost:8080`.
 - Điện thoại thật: URL backend mà điện thoại truy cập được, không dùng `localhost` của máy tính.
 - Release: HTTPS. Các file cấu hình riêng, mật khẩu và khóa ký không được đưa vào Git.
+
+Có thể nối Android qua ADB khi backend chạy trên máy phát triển. Ví dụ với backend thử nghiệm ở cổng 18080:
+
+```sh
+adb reverse tcp:18080 tcp:18080
+flutter run --dart-define=API_BASE_URL=http://127.0.0.1:18080
+```
+
+Kiểm thử tích hợp dùng **database cô lập** vì có tạo đơn và thêm, sửa, xóa lịch bận. Cấu hình `ODMS_SMOKE_BASE_URL` và `ODMS_SMOKE_PASSWORD` trong môi trường chạy rồi gọi `flutter test test/live_order_smoke_test.dart`. Bài kiểm thử lịch bận tự dọn mục sau khi chạy.
 
 Backend phải chạy và có tài khoản hợp lệ. Với backend HTTP ở môi trường phát triển, cấu hình `auth.refresh-token-cookie.secure=false` để cookie phiên có thể hoạt động; production giữ HTTPS và Secure cookie.
 
