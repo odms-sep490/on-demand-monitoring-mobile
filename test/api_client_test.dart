@@ -118,6 +118,10 @@ void main() {
             );
             return response({'accessToken': 'fresh'});
           default:
+            if (options.path == '/api/media/form') {
+              final form = options.data as FormData;
+              expect(Map.fromEntries(form.fields)['requestKey'], 'one');
+            }
             return options.headers['Authorization'] == 'Bearer fresh'
                 ? response({'ok': true})
                 : response(null, status: 401);
@@ -133,6 +137,16 @@ void main() {
       api.accessToken = 'expired';
       expect(await api.request('/api/orders/mine'), {'ok': true});
       expect(refreshCount, 1);
+      api.accessToken = 'expired';
+      expect(
+        await api.request(
+          '/api/media/form',
+          method: 'POST',
+          body: FormData.fromMap({'requestKey': 'one'}),
+        ),
+        {'ok': true},
+      );
+      expect(refreshCount, 2);
       expect(secrets.values.values.single, contains('OMSS_REFRESH_TOKEN'));
       await api.clearSession();
       expect(secrets.values, isEmpty);

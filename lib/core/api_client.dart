@@ -185,7 +185,7 @@ class ApiClient {
         return request(
           path,
           method: method,
-          body: body,
+          body: body is FormData ? body.clone() : body,
           query: query,
           retry: false,
           cancelToken: cancelToken,
