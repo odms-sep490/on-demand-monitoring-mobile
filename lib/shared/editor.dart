@@ -182,42 +182,133 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title)),
-    body: loading
-        ? const Center(child: CircularProgressIndicator())
-        : Form(
-            key: form,
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                for (final field in widget.fields)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: buildField(field),
-                  ),
-                if (error != null) ...[
-                  Text(
-                    error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: load,
-                    child: Text(
-                      context.tr('Reload options', 'Tải lại lựa chọn'),
-                    ),
-                  ),
-                ],
-                FilledButton(
-                  onPressed: submit,
-                  child: Text(context.tr('Continue', 'Tiếp tục')),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final step = int.tryParse(widget.title.split('.').first);
+    final isWizard = step != null && step >= 2 && step <= 6;
+    final (icon, description) = switch (step) {
+      2 => (
+        Icons.map_outlined,
+        context.tr(
+          'Set the address before marking the area on the map.',
+          'Nhập địa chỉ trước khi khoanh vùng trên bản đồ.',
+        ),
+      ),
+      4 => (
+        Icons.verified_user_outlined,
+        context.tr(
+          'Add site details and confirm your right to request monitoring.',
+          'Bổ sung thông tin địa điểm và xác nhận quyền giám sát.',
+        ),
+      ),
+      5 => (
+        Icons.calendar_month_outlined,
+        context.tr(
+          'Choose your preferred visit window. Book at least 7 days ahead.',
+          'Chọn thời gian mong muốn. Đặt lịch trước ít nhất 7 ngày.',
+        ),
+      ),
+      6 => (
+        Icons.inventory_2_outlined,
+        context.tr(
+          'Choose what to receive and how to receive it.',
+          'Chọn sản phẩm và phương thức nhận kết quả.',
+        ),
+      ),
+      _ => (Icons.edit_note_outlined, ''),
+    };
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          isWizard ? context.tr('New request', 'Tạo yêu cầu') : widget.title,
+        ),
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
+              key: form,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (isWizard)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF102D57), Color(0xFF176BA1)],
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(icon, color: const Color(0xFFB6DBFF)),
+                            const SizedBox(height: 10),
+                            Text(
+                              widget.title
+                                  .substring(widget.title.indexOf('.') + 1)
+                                  .trim(),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              description,
+                              style: const TextStyle(color: Color(0xFFE4F3FF)),
+                            ),
+                            const SizedBox(height: 12),
+                            LinearProgressIndicator(
+                              value: step / 6,
+                              backgroundColor: const Color(0xFF4A729A),
+                              color: const Color(0xFF81D9EA),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ],
+                        ),
+                      ),
+                    for (final field in widget.fields)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: buildField(field),
+                      ),
+                    if (error != null) ...[
+                      Text(
+                        error!,
+                        style: TextStyle(color: theme.colorScheme.error),
+                      ),
+                      TextButton(
+                        onPressed: load,
+                        child: Text(
+                          context.tr('Reload options', 'Tải lại lựa chọn'),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-  );
+      bottomNavigationBar: loading
+          ? null
+          : SafeArea(
+              minimum: EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                12 + MediaQuery.viewInsetsOf(context).bottom,
+              ),
+              child: FilledButton.icon(
+                onPressed: submit,
+                label: Text(context.tr('Continue', 'Tiếp tục')),
+                icon: const Icon(Icons.arrow_forward),
+                iconAlignment: IconAlignment.end,
+              ),
+            ),
+    );
+  }
 
   Widget buildField(FieldSpec field) {
     final label = context.tr(field.en, field.vi);
