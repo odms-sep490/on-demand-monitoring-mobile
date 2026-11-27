@@ -116,9 +116,54 @@ flutter test test/redesign_test.dart --concurrency=1 --dart-define=EXPORT_PREVIE
 
 Xem thêm [tính năng và giới hạn](docs/features.md), [kiến trúc](docs/architecture.md) và [kết quả kiểm tra](docs/verification.md).
 
-## 🛠️ Đóng góp
+## 🛠️ Workflow & Contributing / Quy trình đóng góp
 
-1. Tạo nhánh từ `dev`, ví dụ `feat/customer-gallery`, `fix/staff-availability` hoặc `docs/update-readme`.
-2. Commit theo từng chức năng hoặc nhóm thay đổi. Dùng Conventional Commits, ví dụ `feat(customer): add gallery filters` hoặc `refactor(staff): extract mission filters`.
-3. Chạy formatter, analyzer và các test liên quan.
-4. Push nhánh và mở pull request vào `dev` để review. Nhánh `main` nhận bản đã được duyệt.
+### 🌳 Branch naming / Đặt tên nhánh
+
+Create a branch from the latest `dev` and name it `type/description-slug`. Use lowercase English and separate words with hyphens.
+
+Tạo nhánh từ `dev` mới nhất theo mẫu `type/mo-ta-ngan`. Dùng tiếng Anh viết thường và phân cách các từ bằng dấu gạch nối.
+
+| Type / Loại | When to use (EN) | Khi nào dùng (VI) | Example / Ví dụ |
+| --- | --- | --- | --- |
+| `feat` | Add a user-facing feature | Thêm tính năng cho người dùng | `feat/customer-gallery-filters` |
+| `fix` | Correct an existing bug | Sửa lỗi đang xảy ra | `fix/staff-availability-validation` |
+| `design` | Update visual styling or interaction | Chỉnh giao diện, bố cục hoặc hiệu ứng tương tác | `design/order-detail-header` |
+| `refactor` | Improve code structure while preserving behavior | Sắp xếp lại code và giữ nguyên hành vi | `refactor/split-mission-components` |
+| `chore` | Maintain dependencies, tooling or build config | Bảo trì thư viện, công cụ hoặc cấu hình build | `chore/update-flutter-sdk` |
+| `docs` | Update project documentation | Cập nhật tài liệu dự án | `docs/update-mobile-readme` |
+| `test` | Add or improve automated tests | Thêm hoặc cải thiện kiểm thử tự động | `test/customer-order-flow` |
+
+### 💬 Commit messages / Đặt tên commit
+
+Use `type(scope): description` for feature-specific changes and `type: description` for project-wide changes. Write the description in lowercase English, start it with a verb, and omit the final period. Keep each commit focused on one feature or one related change.
+
+Dùng `type(scope): description` cho thay đổi theo tính năng và `type: description` cho thay đổi cấp dự án. Viết mô tả bằng tiếng Anh thường, bắt đầu bằng động từ và bỏ dấu chấm cuối câu. Mỗi commit nên gom thay đổi của một tính năng hoặc một nhóm công việc liên quan.
+
+| Scope / Phạm vi | Example / Ví dụ | Meaning / Ý nghĩa |
+| --- | --- | --- |
+| Customer | `feat(customer): add gallery filters` | Thêm bộ lọc thư viện |
+| Staff | `fix(staff): validate availability dates` | Sửa kiểm tra ngày trong lịch bận |
+| Shared UI | `refactor(ui): extract order status badge` | Tách component trạng thái đơn |
+| Project / Toàn dự án | `chore: update flutter sdk` | Cập nhật Flutter SDK |
+
+### 🚀 Pull requests / Quy trình mở PR
+
+| Step / Bước | English | Tiếng Việt |
+| --- | --- | --- |
+| 1. Branch | Sync your local `dev`, then create a feature branch. | Đồng bộ `dev` local rồi tạo nhánh cho công việc. |
+| 2. Verify | Run the formatter, analyzer and relevant tests. | Chạy formatter, analyzer và các test liên quan. |
+| 3. Commit and push | Commit by feature and push your working branch. | Commit theo từng chức năng rồi push nhánh đang làm. |
+| 4. Open a PR | Target `dev`. Summarize the changes, include verification results and attach screenshots for UI changes. | Mở PR vào `dev`. Ghi rõ nội dung thay đổi, kết quả kiểm thử và đính kèm ảnh nếu sửa giao diện. |
+| 5. Review and merge | Request review and merge approved changes into `dev`. Promote reviewed versions to `main`. | Nhờ review rồi merge phần đã duyệt vào `dev`. Đưa bản đã duyệt lên `main`. |
+
+Example / Ví dụ:
+
+```bash
+git switch dev
+git switch -c feat/customer-gallery-filters
+# After editing and testing / Sau khi sửa và kiểm thử
+git add lib/features/customer/
+git commit -m "feat(customer): add gallery filters"
+git push -u origin feat/customer-gallery-filters
+```
