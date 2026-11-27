@@ -15,13 +15,11 @@ class CustomerServicePicker extends StatefulWidget {
 class _CustomerServicePickerState extends State<CustomerServicePicker> {
   String? selection, purpose;
   final form = GlobalKey<FormState>();
-  final title = TextEditingController();
   final description = TextEditingController();
   final otherPurpose = TextEditingController();
 
   @override
   void dispose() {
-    title.dispose();
     description.dispose();
     otherPurpose.dispose();
     super.dispose();
@@ -140,19 +138,6 @@ class _CustomerServicePickerState extends State<CustomerServicePicker> {
                   ),
                 ),
               const SizedBox(height: 10),
-              TextFormField(
-                controller: title,
-                decoration: InputDecoration(
-                  labelText: context.tr('Request title', 'Tiêu đề yêu cầu'),
-                ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? context.tr(
-                        'Enter a request title.',
-                        'Nhập tiêu đề yêu cầu.',
-                      )
-                    : null,
-              ),
-              const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: purpose,
                 isExpanded: true,
@@ -234,7 +219,7 @@ class _CustomerServicePickerState extends State<CustomerServicePicker> {
                   if (form.currentState?.validate() != true) return;
                   Navigator.pop<Json>(context, {
                     'serviceId': selection,
-                    'title': title.text.trim(),
+                    'title': '',
                     'flightPurpose': purpose,
                     if (purpose == 'OTHER')
                       'otherFlightPurpose': otherPurpose.text.trim(),

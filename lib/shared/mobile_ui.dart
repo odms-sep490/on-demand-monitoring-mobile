@@ -385,7 +385,8 @@ class DomainCard extends StatelessWidget {
                   icon: Icons.person_outline,
                   text: '${item['customerName']}',
                 ),
-              if (item['serviceName'] != null)
+              if (item['serviceName'] != null &&
+                  item['serviceName'] != recordTitle(item))
                 MetaLine(
                   icon: Icons.layers_outlined,
                   text: '${item['serviceName']}',

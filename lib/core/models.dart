@@ -42,6 +42,8 @@ List<Json> records(Object? value) {
 String recordTitle(Json json) {
   for (final key in [
     'title',
+    if (json['orderStatus'] != null && json['missionCode'] == null)
+      'serviceName',
     'subject',
     'scopeLabel',
     'name',
