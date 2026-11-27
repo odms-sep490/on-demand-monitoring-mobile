@@ -84,6 +84,8 @@ ODMS uses a blue accent, restrained borders, clean typography, and imagery tied 
 
 ### Color and type
 
+![ODMS light and dark theme swatches](docs/images/odms-color-palette.png)
+
 | Token | Light theme | Dark theme | Use |
 | --- | --- | --- | --- |
 | Primary | `#1565E8` | `#1565E8` | Primary actions, focus, and selected navigation |
