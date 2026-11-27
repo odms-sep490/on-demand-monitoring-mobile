@@ -1,22 +1,22 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../core/models.dart';
-import '../features/customer/customer_pages.dart';
+import '../features/customer/live_status_page.dart';
 import '../features/customer/media_page.dart';
-import '../features/support/support_pages.dart';
-import '../features/notifications/notifications_page.dart';
+import '../features/customer/order_detail.dart';
+import '../features/customer/orders_page.dart';
+import '../features/devices/device_pages.dart';
+import '../features/maintenance/maintenance_page.dart';
 import '../features/manager/manager_pages.dart';
 import '../features/missions/mission_detail.dart';
-import '../features/devices/device_pages.dart';
-import '../features/customer/order_detail.dart';
-import '../features/maintenance/maintenance_page.dart';
+import '../features/notifications/notifications_page.dart';
 import '../features/staff/availability_page.dart';
 import '../features/staff/checklist_page.dart';
 import '../features/staff/evidence_page.dart';
 import '../features/staff/licenses_page.dart';
-import '../features/customer/live_status_page.dart';
 import '../features/staff/missions_page.dart';
+import '../features/support/support_pages.dart';
 import 'app.dart';
 
 List<RouteBase> featureRoutes() => [
@@ -85,7 +85,8 @@ List<RouteBase> featureRoutes() => [
   ),
   GoRoute(
     path: '/customer/orders/:id',
-    builder: (_, state) => CustomerOrderPage(id: state.pathParameters['id']!),
+    builder: (_, state) =>
+        OrderDetailPage(id: state.pathParameters['id']!, manager: false),
   ),
   GoRoute(
     path: '/customer/media',

@@ -1,18 +1,17 @@
-import '../../shared/mobile_ui.dart';
-import '../../shared/workspace_hero.dart';
-import '../../shared/portal_scaffold.dart';
-
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/api_client.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/record_lookup.dart';
 import '../../shared/editor.dart';
+import '../../shared/mobile_ui.dart';
+import '../../shared/portal_scaffold.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
+import '../../shared/workspace_hero.dart';
 import '../auth/session.dart';
-import '../customer/customer_pages.dart' show lookup;
 
 Future<List<Json>> allPages(ApiClient api, String path) async {
   final result = <Json>[];

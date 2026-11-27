@@ -1,16 +1,15 @@
-import '../../shared/portal_scaffold.dart';
-
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/api_client.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/record_lookup.dart';
 import '../../shared/editor.dart';
+import '../../shared/portal_scaffold.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
-import '../customer/customer_pages.dart' show lookup;
 
 export 'dashboard_page.dart';
 
