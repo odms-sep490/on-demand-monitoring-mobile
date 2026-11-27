@@ -2,6 +2,10 @@ import '../../shared/portal_scaffold.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../../shared/coverage_geometry.dart';
 
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -38,6 +42,14 @@ class OrderDetailPage extends ConsumerWidget {
             context,
             MaterialPageRoute<void>(builder: (_) => page),
           );
+          if (!manager) {
+            return _CustomerOrderWorkspace(
+              key: ValueKey(id),
+              order: order,
+              id: id,
+              reload: reload,
+            );
+          }
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
@@ -513,6 +525,315 @@ class _OrderProgress extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomerOrderWorkspace extends StatefulWidget {
+  const _CustomerOrderWorkspace({
+    super.key,
+    required this.order,
+    required this.id,
+    required this.reload,
+  });
+  final Json order;
+  final String id;
+  final VoidCallback reload;
+  @override
+  State<_CustomerOrderWorkspace> createState() =>
+      _CustomerOrderWorkspaceState();
+}
+
+class _CustomerOrderWorkspaceState extends State<_CustomerOrderWorkspace> {
+  int active = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final order = widget.order;
+    final id = widget.id;
+    final colors = Theme.of(context).colorScheme;
+    Future<void> open(Widget page, {bool refresh = false}) async {
+      await Navigator.of(context)
+          .push<void>(MaterialPageRoute(builder: (_) => page));
+      if (refresh && mounted) widget.reload();
+    }
+
+    Widget action(IconData icon, String label, VoidCallback onTap) => ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: colors.primary),
+      title: Text(label),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+    final panels = [
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _OrderCoverageMap(order: order),
+          Text(
+            context.tr('Order information', 'Thông tin đơn hàng'),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const Divider(),
+          DetailFields(
+            data: order,
+            fields: const {
+              'serviceName': ('Service', 'Dịch vụ'),
+              'description': ('Description', 'Mô tả'),
+              'address': ('Site', 'Địa điểm'),
+              'preferredDateFrom': ('From', 'Từ ngày'),
+              'preferredDateTo': ('To', 'Đến ngày'),
+              'preferredTimeName': ('Time slot', 'Khung giờ'),
+              'siteContactName': ('Site contact', 'Người liên hệ'),
+              'siteContactPhone': ('Phone', 'Điện thoại'),
+              'accessNotes': ('Access notes', 'Lưu ý tiếp cận'),
+              'rejectReason': ('Review note', 'Ý kiến duyệt'),
+              'legalReviewStatus': ('Permit review', 'Duyệt giấy phép'),
+              'recurrenceType': ('Repeat', 'Lặp lại'),
+              'dataRetentionDays': ('Retention (days)', 'Lưu trữ (ngày)'),
+            },
+          ),
+          action(
+            Icons.cloud_outlined,
+            context.tr(
+              'Site and weather assessment',
+              'Thời tiết và đánh giá khu vực',
+            ),
+            () => open(SiteAdvisoryPage(order: order)),
+          ),
+        ],
+      ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            context.tr('Monitoring checklist', 'Hạng mục giám sát'),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const Divider(),
+          for (final (index, item) in records(order['checklistItems']).indexed)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(child: Text('${index + 1}')),
+              title: Text('${item['content'] ?? ''}'),
+              subtitle: Text('${item['requiredEvidenceType'] ?? ''}'),
+            ),
+          if (order['canEditChecklist'] == true)
+            action(
+              Icons.edit_note,
+              context.tr('Edit checklist', 'Chỉnh sửa hạng mục'),
+              () => open(CustomerChecklistEditor(order: order), refresh: true),
+            ),
+          action(
+            Icons.assignment_outlined,
+            context.tr('Missions and reports', 'Nhiệm vụ và báo cáo'),
+            () => open(CustomerMissionsPage(orderId: id)),
+          ),
+        ],
+      ),
+      Column(
+        children: [
+          action(
+            Icons.receipt_long_outlined,
+            context.tr('Quotes and payments', 'Báo giá và thanh toán'),
+            () => open(FinancePage(orderId: id), refresh: true),
+          ),
+          const Divider(height: 1),
+          action(
+            Icons.description_outlined,
+            context.tr('Contract documents', 'Tài liệu hợp đồng'),
+            () =>
+                open(ContractPage(orderId: id, manager: false), refresh: true),
+          ),
+        ],
+      ),
+      Column(
+        children: [
+          action(
+            Icons.photo_library_outlined,
+            context.tr('Delivered results', 'Kết quả bàn giao'),
+            () => open(ResultsPage(orderId: id), refresh: true),
+          ),
+          const Divider(height: 1),
+          action(
+            Icons.assignment_outlined,
+            context.tr('Missions and reports', 'Nhiệm vụ và báo cáo'),
+            () => open(CustomerMissionsPage(orderId: id)),
+          ),
+        ],
+      ),
+    ];
+    final tabs = [
+      (Icons.dashboard_outlined, context.tr('Overview', 'Tổng quan')),
+      (Icons.checklist_outlined, context.tr('Monitoring', 'Giám sát')),
+      (Icons.receipt_long_outlined, context.tr('Finance', 'Tài chính')),
+      (Icons.inventory_2_outlined, context.tr('Results', 'Kết quả')),
+    ];
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _CustomerOrderHeader(order: order),
+        const SizedBox(height: 12),
+        _OrderProgress(status: recordStatus(order)),
+        OrderActions(order: order, manager: false, reload: widget.reload),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final (index, tab) in tabs.indexed)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    avatar: Icon(tab.$1, size: 17),
+                    label: Text(tab.$2),
+                    selected: active == index,
+                    onSelected: (_) => setState(() => active = index),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        AnimatedSwitcher(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+          child: KeyedSubtree(key: ValueKey(active), child: panels[active]),
+        ),
+      ],
+    );
+  }
+}
+
+class _OrderCoverageMap extends StatefulWidget {
+  const _OrderCoverageMap({required this.order});
+  final Json order;
+  @override
+  State<_OrderCoverageMap> createState() => _OrderCoverageMapState();
+}
+
+class _OrderCoverageMapState extends State<_OrderCoverageMap> {
+  bool satellite = false;
+  @override
+  Widget build(BuildContext context) {
+    final order = widget.order;
+    final lat = num.tryParse('${order['latitude']}')?.toDouble();
+    final lon = num.tryParse('${order['longitude']}')?.toDouble();
+    if (lat == null ||
+        lon == null ||
+        !lat.isFinite ||
+        !lon.isFinite ||
+        lat.abs() > 90 ||
+        lon.abs() > 180) {
+      return const SizedBox.shrink();
+    }
+    final center = LatLng(lat, lon);
+    final geometry = object(order['coverageArea']);
+    final rings = geometry['coordinates'];
+    final points = <LatLng>[
+      if (geometry['type'] == 'Polygon' &&
+          rings is List &&
+          rings.isNotEmpty &&
+          rings.first is List)
+        for (final pair in rings.first as List)
+          if (pair is List &&
+              pair.length >= 2 &&
+              pair[0] is num &&
+              pair[1] is num)
+            LatLng((pair[1] as num).toDouble(), (pair[0] as num).toDouble()),
+    ];
+    final radius = num.tryParse('${order['radiusM']}')?.toDouble();
+    final boundary = points.length >= 3 && validCoverage(points)
+        ? points
+        : radius != null && radius.isFinite && radius > 0
+        ? circleBoundary(center, radius)
+        : <LatLng>[];
+    final color = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.tr('Monitoring area', 'Vùng giám sát'),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => setState(() => satellite = !satellite),
+                icon: const Icon(Icons.layers_outlined),
+                label: Text(
+                  satellite
+                      ? context.tr('Street', 'Đường phố')
+                      : context.tr('Satellite', 'Vệ tinh'),
+                ),
+              ),
+            ],
+          ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              height: 216,
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: center,
+                  initialZoom: 15,
+                  initialCameraFit: boundary.isEmpty
+                      ? null
+                      : CameraFit.bounds(
+                          bounds: LatLngBounds.fromPoints(boundary),
+                          padding: const EdgeInsets.all(24),
+                          maxZoom: 16,
+                        ),
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                  ),
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: satellite
+                        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    fallbackUrl: satellite ? null : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                    userAgentPackageName: 'vn.odms.odms_mobile',
+                  ),
+                  if (boundary.isNotEmpty)
+                    PolygonLayer(
+                      polygons: [
+                        Polygon(
+                          points: boundary,
+                          color: color.withValues(alpha: .18),
+                          borderColor: color,
+                          borderStrokeWidth: 2,
+                        ),
+                      ],
+                    ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: center,
+                        width: 26,
+                        height: 26,
+                        child: Icon(Icons.location_on, color: color),
+                      ),
+                    ],
+                  ),
+                  SimpleAttributionWidget(
+                    source: Text(
+                      satellite
+                          ? 'Esri'
+                          : '© OpenStreetMap contributors · Esri',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

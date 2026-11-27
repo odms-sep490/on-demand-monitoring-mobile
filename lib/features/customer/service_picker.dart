@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/models.dart';
+import '../../core/config.dart';
 import '../../shared/strings.dart';
 
 class CustomerServicePicker extends StatefulWidget {
@@ -12,12 +13,6 @@ class CustomerServicePicker extends StatefulWidget {
 }
 
 class _CustomerServicePickerState extends State<CustomerServicePicker> {
-  static const images = [
-    'construction-640',
-    'infrastructure-640',
-    'landscape-640',
-    'highland-overview',
-  ];
   String? selection, purpose;
   final form = GlobalKey<FormState>();
   final title = TextEditingController();
@@ -71,7 +66,7 @@ class _CustomerServicePickerState extends State<CustomerServicePicker> {
                     'Chưa có dịch vụ khả dụng.',
                   ),
                 ),
-              for (final (index, service) in widget.services.indexed)
+              for (final service in widget.services)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Semantics(
@@ -101,12 +96,7 @@ class _CustomerServicePickerState extends State<CustomerServicePicker> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
-                                child: Image.asset(
-                                  'assets/images/${images[index % images.length]}.webp',
-                                  width: 86,
-                                  height: 74,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: _ServiceArtwork(service: service),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -257,6 +247,49 @@ class _CustomerServicePickerState extends State<CustomerServicePicker> {
           iconAlignment: IconAlignment.end,
         ),
       ),
+    );
+  }
+}
+
+class _ServiceArtwork extends StatelessWidget {
+  const _ServiceArtwork({required this.service});
+  final Json service;
+
+  @override
+  Widget build(BuildContext context) {
+    final details = "${recordTitle(service)} ${service['description'] ?? ''}"
+        .toLowerCase();
+    final fallback = switch (details) {
+      _
+          when RegExp(
+            r'warehouse|factory|industrial|construction|building|nhà xưởng|nhà máy|công trình|xưởng',
+          ).hasMatch(details) =>
+        'construction-640',
+      _ when RegExp(r'forest|woodland|lâm nghiệp|rừng').hasMatch(details) =>
+        'highland-overview',
+      _
+          when RegExp(r'area|region|urban|khu vực|khu dân cư|đô thị')
+              .hasMatch(details) =>
+        'infrastructure-640',
+      _ => 'landscape-640',
+    };
+    Widget local() =>
+        Image.asset('assets/images/$fallback.webp', fit: BoxFit.cover);
+    final supplied = service['imageUrl'] as String?;
+    final base = Uri.tryParse(AppConfig.apiBaseUrl);
+    final url = supplied == null || supplied.trim().isEmpty
+        ? null
+        : base?.resolve(supplied);
+    return SizedBox(
+      width: 86,
+      height: 74,
+      child: url != null && (url.scheme == 'http' || url.scheme == 'https')
+          ? Image.network(
+              url.toString(),
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => local(),
+            )
+          : local(),
     );
   }
 }

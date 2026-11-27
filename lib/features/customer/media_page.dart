@@ -1,3 +1,4 @@
+import 'change_analysis_page.dart';
 import '../../shared/portal_scaffold.dart';
 
 import 'package:material_ui/material_ui.dart';
@@ -44,6 +45,24 @@ class _CustomerMediaPageState extends ConsumerState<CustomerMediaPage> {
                     ),
                     onChanged: (value) =>
                         setState(() => search = value.trim().toLowerCase()),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.auto_awesome_outlined),
+                      label: Text(
+                        context.tr(
+                          'AI change analysis',
+                          'AI phân tích thay đổi',
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ChangeAnalysisPage(assets: records(data)),
+                        ),
+                      ),
+                    ),
                   ),
                   Wrap(
                     spacing: 8,
