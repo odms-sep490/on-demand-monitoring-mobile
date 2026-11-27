@@ -1,4 +1,4 @@
-<img src="assets/images/logo.png" alt="ODMS logo" width="96">
+<p><img src="assets/images/logo.png" alt="" width="44" align="middle"> <strong>OnDemand Monitor</strong></p>
 
 # 📱 ODMS Mobile
 
