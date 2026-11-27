@@ -1,8 +1,6 @@
-import '../../shared/workspace_hero.dart';
-
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -10,7 +8,8 @@ import '../../shared/mobile_ui.dart';
 import '../../shared/portal_scaffold.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
-import 'customer_pages.dart' show createOrder;
+import '../../shared/workspace_hero.dart';
+import 'create_order.dart';
 
 class CustomerOrdersPage extends ConsumerStatefulWidget {
   const CustomerOrdersPage({super.key});

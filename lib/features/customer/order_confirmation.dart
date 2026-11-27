@@ -1,13 +1,14 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
-import '../../core/api_client.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../shared/mobile_ui.dart';
 import '../../shared/portal_scaffold.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
+import 'site_advisory_data.dart';
+import 'weather_summary.dart';
 
 class SiteAdvisoryPage extends ConsumerWidget {
   const SiteAdvisoryPage({
@@ -18,104 +19,6 @@ class SiteAdvisoryPage extends ConsumerWidget {
   });
   final Json order, area;
   final bool confirm;
-  Future<Json> load(ApiClient api) async {
-    final result = <String, dynamic>{};
-    Future<void> attempt(String key, Future<Object?> Function() action) async {
-      try {
-        result[key] = await action();
-      } catch (error) {
-        result['${key}Error'] = '$error';
-      }
-    }
-
-    final lat = order['latitude'], lon = order['longitude'];
-    final req = records(order['deliverables']).isEmpty
-        ? <String, dynamic>{}
-        : object(records(order['deliverables']).first['requirement']);
-    final riskRadius = num.tryParse(
-      '${area['radiusM'] ?? order['radiusM'] ?? req['radiusM'] ?? req['radius_m'] ?? ''}',
-    );
-    if (lat is! num || lon is! num || riskRadius == null) {
-      result['riskError'] = 'LOCATION_INCOMPLETE';
-    }
-    await Future.wait([
-      if (lat is num && lon is num && riskRadius != null)
-        attempt(
-          'risk',
-          () => api.request(
-            '/api/flight-area-assessment',
-            query: {
-              'latitude': lat,
-              'longitude': lon,
-              'radiusMeters': riskRadius,
-              'requestedAltitudeAgl': order['altitudeM'],
-              'includeOsm': true,
-            },
-          ),
-        ),
-      attempt('weather', () async {
-        final times = records(await api.request('/api/preferred-times'));
-        final slots = times
-            .where((e) => e['id'] == order['preferredTimeId'])
-            .toList();
-        final time = slots.isEmpty ? null : slots.first['startTime'];
-        if (time is! String ||
-            time.length < 5 ||
-            order['preferredDateFrom'] == null ||
-            lat is! num ||
-            lon is! num) {
-          throw const ApiFailure(
-            'The order has no complete location and time slot for a forecast.',
-          );
-        }
-        return api.request(
-          '/api/weather/forecast',
-          query: {
-            'latitude': lat,
-            'longitude': lon,
-            'date': order['preferredDateFrom'],
-            'time': time.substring(0, 5),
-          },
-        );
-      }),
-      if (confirm)
-        attempt(
-          'quote',
-          () => api.request(
-            '/api/pricing/checklist-quote',
-            method: 'POST',
-            body: {
-              'serviceId': order['serviceId'],
-              'items': records(order['checklistItems'])
-                  .map(
-                    (e) => {
-                      if (e['sourceChecklistId'] != null)
-                        'sourceChecklistId': e['sourceChecklistId'],
-                      if (e['existingItemId'] != null)
-                        'existingItemId': e['existingItemId'],
-                      'content': e['contentOverride'] ?? e['content'],
-                      if (e['requestedImageCount'] != null)
-                        'requestedImageCount': e['requestedImageCount'],
-                      if (e['requestedVideoCount'] != null)
-                        'requestedVideoCount': e['requestedVideoCount'],
-                    },
-                  )
-                  .toList(),
-              if (area['areaHa'] != null) 'areaHa': area['areaHa'],
-              if (order['estimatedLengthM'] is num)
-                'lengthKm': (order['estimatedLengthM'] as num) / 1000,
-              'altitudeM': order['altitudeM'],
-              'occurrences': order['recurrenceType'] == 'NONE'
-                  ? 1
-                  : order['recurrenceOccurrences'],
-              'resultFormats': order['resultFormats'],
-              'permitStatus': order['permitStatus'],
-            },
-          ),
-        ),
-    ]);
-    return result;
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => PortalScaffold(
@@ -127,7 +30,12 @@ class SiteAdvisoryPage extends ConsumerWidget {
       ),
     ),
     body: RemoteView(
-      load: () => load(ref.read(apiProvider)),
+      load: () => loadSiteAdvisory(
+        ref.read(apiProvider),
+        order: order,
+        area: area,
+        confirm: confirm,
+      ),
       builder: (context, value, reload) {
         final data = object(value),
             risk = object(object(value)['risk']),
@@ -171,7 +79,7 @@ class SiteAdvisoryPage extends ConsumerWidget {
                       ),
                     ),
                   if (weather['status'] == 'AVAILABLE')
-                    _WeatherSummary(weather: weather),
+                    WeatherSummary(weather: weather),
                   DetailFields(
                     data: weather,
                     fields: const {
@@ -336,71 +244,4 @@ class SiteAdvisoryPage extends ConsumerWidget {
       },
     ),
   );
-}
-
-class _WeatherSummary extends StatelessWidget {
-  const _WeatherSummary({required this.weather});
-  final Json weather;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Wrap(
-        spacing: 18,
-        runSpacing: 12,
-        children: [
-          for (final (key, unit, label, icon) in [
-            (
-              'temperatureC',
-              '°C',
-              context.tr('Temperature', 'Nhiệt độ'),
-              Icons.thermostat_outlined,
-            ),
-            (
-              'precipitationProbabilityPercent',
-              '%',
-              context.tr('Rain chance', 'Khả năng mưa'),
-              Icons.water_drop_outlined,
-            ),
-            (
-              'windSpeedKmh',
-              'km/h',
-              context.tr('Wind', 'Gió'),
-              Icons.air_outlined,
-            ),
-          ])
-            if (weather[key] case final num value)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    icon,
-                    size: 18,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                  Text(
-                    '$value $unit',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ],
-              ),
-        ],
-      ),
-    );
-  }
 }

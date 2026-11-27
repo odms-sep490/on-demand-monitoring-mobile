@@ -1,8 +1,6 @@
-import '../../shared/workspace_hero.dart';
-
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -10,7 +8,9 @@ import '../../shared/mobile_ui.dart';
 import '../../shared/portal_scaffold.dart';
 import '../../shared/strings.dart';
 import '../../shared/widgets.dart';
+import '../../shared/workspace_hero.dart';
 import '../auth/session.dart';
+import 'mission_filters.dart';
 
 class StaffMissionsPage extends ConsumerStatefulWidget {
   const StaffMissionsPage({super.key});
@@ -158,101 +158,20 @@ class _StaffMissionsPageState extends ConsumerState<StaffMissionsPage> {
                     ],
                   ),
                 ),
-                if (dates.isNotEmpty)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        ChoiceChip(
-                          label: Text(context.tr('All days', 'Tất cả ngày')),
-                          selected: selectedDate == null,
-                          onSelected: (_) =>
-                              setState(() => selectedDate = null),
-                        ),
-                        for (final date in dates)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: ChoiceChip(
-                              label: Text(
-                                MaterialLocalizations.of(context)
-                                    .formatShortDate(date),
-                              ),
-                              selected: DateUtils.isSameDay(selectedDate, date),
-                              onSelected: (_) =>
-                                  setState(() => selectedDate = date),
-                            ),
-                          ),
-                      ],
-                    ),
+
+                MissionFilters(
+                  dates: dates,
+                  selectedDate: selectedDate,
+                  tab: tab,
+                  counts: (
+                    pending: pendingItems.length,
+                    upcoming: upcoming.length,
+                    history: history.length,
                   ),
-                SectionCard(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    children: [
-                      for (final (index, label, count) in [
-                        (
-                          0,
-                          context.tr('Awaiting reply', 'Chờ phản hồi'),
-                          pendingItems.length,
-                        ),
-                        (1, context.tr('Upcoming', 'Sắp tới'), upcoming.length),
-                        (2, context.tr('History', 'Lịch sử'), history.length),
-                      ])
-                        Expanded(
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(10),
-                            onTap: () => setState(() => tab = index),
-                            child: AnimatedContainer(
-                              duration: MediaQuery.disableAnimationsOf(context)
-                                  ? Duration.zero
-                                  : const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 11,
-                                horizontal: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: tab == index
-                                    ? odmsBlue.withValues(alpha: .08)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    label,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: tab == index
-                                          ? odmsBlue
-                                          : odmsMuted,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    '$count',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: tab == index
-                                          ? odmsBlue
-                                          : odmsMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                TextField(
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    hintText: context.tr('Search missions', 'Tìm nhiệm vụ'),
-                  ),
-                  onChanged: (value) => setState(() => query = value),
+                  onDateChanged: (value) =>
+                      setState(() => selectedDate = value),
+                  onTabChanged: (value) => setState(() => tab = value),
+                  onQueryChanged: (value) => setState(() => query = value),
                 ),
                 const SizedBox(height: 16),
                 if (filtered.isEmpty)
